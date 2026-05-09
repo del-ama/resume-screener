@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template, Response
 from groq import Groq
 from utils import extract_text, get_candidate_name, extract_candidate_name
-from fpdf import FPDF
 
 load_dotenv()
 
