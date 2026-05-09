@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screening Results</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #F7FAFC;
+      color: #2D3748;
+      padding: 40px 20px;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    h1 { color: #2C5282; font-size: 26px; }
+    .subtitle { color: #718096; font-size: 14px; margin-top: 4px; }
+
+    .role-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1A365D;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+
+    .back-btn {
+      padding: 10px 20px;
+      background: white;
+      border: 1px solid #CBD5E0;
+      border-radius: 6px;
+      color: #2C5282;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .back-btn:hover { background: #EBF4FF; }
+
+    .summary-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .summary-pill {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .fit-exact { background: #C6F6D5; color: #276749; }
+    .fit-semantic { background: #BEE3F8; color: #2A69AC; }
+    .fit-transferable { background: #FEFCBF; color: #744210; }
+    .fit-spam { background: #FED7D7; color: #9B2C2C; }
+    .fit-irrelevant { background: #E2E8F0; color: #4A5568; }
+
+    .candidate-card {
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      border-left: 5px solid #CBD5E0;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+
+    .candidate-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    .candidate-card.fit-exact-border { border-left-color: #38A169; }
+    .candidate-card.fit-semantic-border { border-left-color: #3182CE; }
+    .candidate-card.fit-transferable-border { border-left-color: #D69E2E; }
+    .candidate-card.fit-spam-border { border-left-color: #E53E3E; }
+    .candidate-card.fit-irrelevant-border { border-left-color: #A0AEC0; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+    }
+
+    .candidate-name { font-size: 17px; font-weight: bold; color: #2D3748; }
+    .candidate-file { font-size: 12px; color: #A0AEC0; margin-top: 3px; }
+
+    .card-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .score-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .score-high { background: #38A169; }
+    .score-mid { background: #D69E2E; }
+    .score-low { background: #E53E3E; }
+
+    .expand-icon {
+      color: #A0AEC0;
+      font-size: 20px;
+      transition: transform 0.2s;
+    }
+
+    .expand-icon.open { transform: rotate(180deg); }
+
+    .card-detail {
+      display: none;
+      padding: 0 24px 24px;
+      border-top: 1px solid #EDF2F7;
+    }
+
+    .card-detail.open { display: block; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .detail-section h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #718096;
+      margin-bottom: 10px;
+    }
+
+    .score-bars { margin-top: 20px; }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .bar-label { font-size: 13px; color: #4A5568; width: 140px; flex-shrink: 0; }
+
+    .bar-track {
+      flex: 1;
+      background: #EDF2F7;
+      border-radius: 4px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    .bar-value { font-size: 13px; color: #2D3748; font-weight: bold; width: 36px; text-align: right; }
+
+    .detail-list { list-style: none; padding: 0; }
+
+    .detail-list li {
+      font-size: 14px;
+      padding: 6px 0;
+      border-bottom: 1px solid #F7FAFC;
+      line-height: 1.5;
+    }
+
+    .detail-list li:last-child { border-bottom: none; }
+    .detail-list.strengths li::before { content: "✓ "; color: #38A169; font-weight: bold; }
+    .detail-list.gaps li::before { content: "✗ "; color: #E53E3E; font-weight: bold; }
+    .detail-list.suggestions li::before { content: "→ "; color: #3182CE; font-weight: bold; }
+    .detail-list.mandatory li::before { content: "⚠ "; color: #D69E2E; font-weight: bold; }
+    .detail-list.evidence-for li::before { content: "✓ "; color: #38A169; font-weight: bold; }
+    .detail-list.evidence-against li::before { content: "✗ "; color: #E53E3E; font-weight: bold; }
+
+    .summary-text {
+      background: #F7FAFC;
+      border-left: 3px solid #2C5282;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #4A5568;
+      border-radius: 0 6px 6px 0;
+      margin-top: 16px;
+    }
+
+    .recommendation-box {
+      background: #F0FFF4;
+      border-left: 3px solid #38A169;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #4A5568;
+      border-radius: 0 6px 6px 0;
+      margin-top: 16px;
+    }
+
+    .score-reasoning-box {
+      background: #EBF4FF;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.7;
+      margin-top: 16px;
+    }
+
+    .mandatory-alert {
+      background: #FFFBEB;
+      border: 1px solid #F6E05E;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #744210;
+    }
+
+    .mandatory-alert strong { display: block; margin-bottom: 4px; }
+
+    .spam-warning {
+      background: #FFF5F5;
+      border: 1px solid #FC8181;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #9B2C2C;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 60px;
+      color: #A0AEC0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>Screening Results</h1>
+      <p class="role-title">{{ job_title }}</p>
+      <p class="subtitle">
+        {{ results|length }} candidate{{ 's' if results|length != 1 else '' }}
+        screened — ranked by match score
+      </p>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button class="back-btn" onclick="downloadCSV()">⬇ Download CSV</button>
+        <button class="back-btn" id="copyBtn" onclick="copyToClipboard()">⎘ Copy Results</button>
+        
+
+      <a href="/" class="back-btn">← Screen More</a>
+    </div>
+  </div>
+
+  <!-- SUMMARY PILLS -->
+  <div class="summary-bar">
+    {% set counts = {} %}
+    {% for r in results %}
+      {% set cat = r.fit_category | default('unknown') %}
+      {% if cat not in counts %}{% set _ = counts.update({cat: 0}) %}{% endif %}
+      {% set _ = counts.update({cat: counts[cat] + 1}) %}
+    {% endfor %}
+
+    {% if counts.get('exact_fit', 0) > 0 %}
+    <span class="summary-pill fit-exact">✓ Exact Fit: {{ counts['exact_fit'] }}</span>
+    {% endif %}
+    {% if counts.get('semantic_fit', 0) > 0 %}
+    <span class="summary-pill fit-semantic">◎ Semantic Fit: {{ counts['semantic_fit'] }}</span>
+    {% endif %}
+    {% if counts.get('transferable_fit', 0) > 0 %}
+    <span class="summary-pill fit-transferable">⇄ Transferable: {{ counts['transferable_fit'] }}</span>
+    {% endif %}
+    {% if counts.get('keyword_spam', 0) > 0 %}
+    <span class="summary-pill fit-spam">⚠ Keyword Spam: {{ counts['keyword_spam'] }}</span>
+    {% endif %}
+    {% if counts.get('irrelevant', 0) > 0 %}
+    <span class="summary-pill fit-irrelevant">✗ Irrelevant: {{ counts['irrelevant'] }}</span>
+    {% endif %}
+  </div>
+
+  <!-- CANDIDATE CARDS -->
+  {% if results %}
+    {% for r in results %}
+
+    {% set cat = r.fit_category | default('irrelevant') %}
+    {% set border_class = {
+      'exact_fit': 'fit-exact-border',
+      'semantic_fit': 'fit-semantic-border',
+      'transferable_fit': 'fit-transferable-border',
+      'keyword_spam': 'fit-spam-border',
+      'irrelevant': 'fit-irrelevant-border'
+    }[cat] | default('fit-irrelevant-border') %}
+
+    {% set score = r.overall_match | default(0) %}
+    {% set score_class = 'score-high' if score >= 70 else ('score-mid' if score >= 40 else 'score-low') %}
+
+    <div class="candidate-card {{ border_class }}"
+         onclick="toggleCard({{ loop.index }})">
+
+      <!-- CARD HEADER -->
+      <div class="card-header">
+        <div>
+          <div class="candidate-name">{{ r.name }}</div>
+          <div class="candidate-file">{{ r.filename }}</div>
+          <div style="margin-top:8px;">
+            {% set pill_class = {
+              'exact_fit': 'fit-exact',
+              'semantic_fit': 'fit-semantic',
+              'transferable_fit': 'fit-transferable',
+              'keyword_spam': 'fit-spam',
+              'irrelevant': 'fit-irrelevant'
+            }[cat] | default('fit-irrelevant') %}
+            {% set pill_label = {
+              'exact_fit': '✓ Exact Fit',
+              'semantic_fit': '◎ Semantic Fit',
+              'transferable_fit': '⇄ Transferable Fit',
+              'keyword_spam': '⚠ Keyword Spam',
+              'irrelevant': '✗ Irrelevant'
+            }[cat] | default('Unknown') %}
+            <span class="summary-pill {{ pill_class }}">{{ pill_label }}</span>
+
+            {% if r.fit_reasoning is defined and r.fit_reasoning %}
+            <span style="font-size:12px; color:#718096; margin-left:8px; font-style:italic;">
+              {{ r.fit_reasoning }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card-right">
+          <div class="score-circle {{ score_class }}">{{ score }}%</div>
+          <div class="expand-icon" id="icon-{{ loop.index }}">▼</div>
+        </div>
+      </div>
+
+      <!-- CARD DETAIL -->
+      <div class="card-detail" id="detail-{{ loop.index }}">
+
+        <!-- Score bars -->
+        <div class="score-bars">
+          {% for label, value in [
+            ('Skills Match', r.skills_match | default(0)),
+            ('Experience Match', r.experience_match | default(0)),
+            ('Education Match', r.education_match | default(0))
+          ] %}
+          <div class="bar-row">
+            <span class="bar-label">{{ label }}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width: {{ value }}%;
+                background: {{ '#38A169' if value >= 70 else ('#D69E2E' if value >= 40 else '#E53E3E') }};">
+              </div>
+            </div>
+            <span class="bar-value">{{ value }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Score Reasoning -->
+        {% if r.score_reasoning is defined %}
+        <div class="score-reasoning-box">
+          <strong>Score Reasoning:</strong><br>
+          <b>Skills:</b> {{ r.score_reasoning.skills | default('') }}<br>
+          <b>Experience:</b> {{ r.score_reasoning.experience | default('') }}<br>
+          <b>Education:</b> {{ r.score_reasoning.education | default('') }}
+        </div>
+        {% endif %}
+
+        <!-- Mandatory requirements alert -->
+        {% if not r.mandatory_requirements_met | default(true) %}
+        <div class="mandatory-alert">
+          <strong>⚠ Mandatory Requirements Not Met</strong>
+          {% for gap in r.mandatory_gaps | default([]) %}
+          <div>• {{ gap }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Keyword spam warning -->
+        {% if cat == 'keyword_spam' %}
+        <div class="spam-warning">
+          <strong>⚠ Possible Keyword Spam Detected</strong>
+          Resume language closely mirrors the JD but may lack genuine depth.
+          Recommend a screening call before shortlisting.
+        </div>
+        {% endif %}
+
+        <!-- Detail grid — strengths, gaps, suggestions, mandatory gaps -->
+        <div class="detail-grid">
+
+          <div class="detail-section">
+            <h3>Strengths</h3>
+            <ul class="detail-list strengths">
+              {% for s in r.strengths | default([]) %}
+              <li>{{ s }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="detail-section">
+            <h3>Gaps</h3>
+            <ul class="detail-list gaps">
+              {% for g in r.gaps | default([]) %}
+              <li>{{ g }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="detail-section">
+            <h3>Suggestions for Candidate</h3>
+            <ul class="detail-list suggestions">
+              {% for s in r.suggestions | default([]) %}
+              <li>{{ s }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          {% if r.mandatory_gaps | default([]) | length > 0 %}
+          <div class="detail-section">
+            <h3>Mandatory Gaps</h3>
+            <ul class="detail-list mandatory">
+              {% for m in r.mandatory_gaps | default([]) %}
+              <li>{{ m }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+        </div>
+
+        <!-- Evidence -->
+        {% if r.evidence is defined %}
+        <div class="detail-grid" style="margin-top:20px;">
+          <div class="detail-section">
+            <h3>Supporting Evidence</h3>
+            <ul class="detail-list evidence-for">
+              {% for e in r.evidence.supporting | default([]) %}
+              <li>{{ e }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div class="detail-section">
+            <h3>Evidence Against</h3>
+            <ul class="detail-list evidence-against">
+              {% for e in r.evidence.against | default([]) %}
+              <li>{{ e }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Recruiter Recommendation -->
+        {% if r.recommendation is defined and r.recommendation %}
+        <div class="recommendation-box">
+          <strong>Recruiter Recommendation:</strong><br>
+          {{ r.recommendation }}
+        </div>
+        {% endif %}
+
+        <!-- Overall Summary -->
+        <div class="summary-text">
+          {{ r.summary | default('No summary available.') }}
+        </div>
+
+      </div>
+    </div>
+    {% endfor %}
+
+  {% else %}
+    <div class="no-results">No results to display.</div>
+  {% endif %}
+
+</div>
+
+<!-- Pass results data to JavaScript for downloads -->
+<script>
+  window.screeningResults = {{ results | tojson }};
+  window.jobTitle = {{ job_title | tojson }};
+
+  function toggleCard(index) {
+    const detail = document.getElementById("detail-" + index)
+    const icon = document.getElementById("icon-" + index)
+    detail.classList.toggle("open")
+    icon.classList.toggle("open")
+  }
+
+  function downloadCSV() {
+    fetch("/download-csv", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        results: window.screeningResults,
+        job_title: window.jobTitle
+      })
+    })
+    .then(res => res.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "screening_results.csv"
+      a.click()
+      URL.revokeObjectURL(url)
+    })
+  }
+
+function copyToClipboard() {
+  const btn = document.getElementById("copyBtn")
+  let text = `SCREENING RESULTS — ${window.jobTitle}\n`
+  text += `${"=".repeat(50)}\n\n`
+
+  window.screeningResults.forEach((r, i) => {
+    const fitLabel = {
+      exact_fit: "Exact Fit",
+      semantic_fit: "Semantic Fit",
+      transferable_fit: "Transferable Fit",
+      keyword_spam: "Keyword Spam",
+      irrelevant: "Irrelevant"
+    }[r.fit_category] || "Unknown"
+
+    text += `${i + 1}. ${r.name}\n`
+    text += `   Fit Category : ${fitLabel}\n`
+    text += `   Overall Match: ${r.overall_match}%\n`
+    text += `   Skills       : ${r.skills_match}%  |  `
+    text += `Experience: ${r.experience_match}%  |  `
+    text += `Education: ${r.education_match}%\n`
+
+    if (r.fit_reasoning) {
+      text += `   Why          : ${r.fit_reasoning}\n`
+    }
+
+    if (!r.mandatory_requirements_met && r.mandatory_gaps?.length > 0) {
+      text += `   ⚠ Mandatory Gaps:\n`
+      r.mandatory_gaps.forEach(g => text += `     • ${g}\n`)
+    }
+
+    if (r.strengths?.length > 0) {
+      text += `   Strengths:\n`
+      r.strengths.forEach(s => text += `     ✓ ${s}\n`)
+    }
+
+    if (r.gaps?.length > 0) {
+      text += `   Gaps:\n`
+      r.gaps.forEach(g => text += `     ✗ ${g}\n`)
+    }
+
+    if (r.recommendation) {
+      text += `   Recommendation:\n`
+      text += `   ${r.recommendation}\n`
+    }
+
+    text += `\n${"-".repeat(50)}\n\n`
+  })
+
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = "✓ Copied!"
+    btn.style.background = "#C6F6D5"
+    btn.style.color = "#276749"
+    setTimeout(() => {
+      btn.textContent = "⎘ Copy Results"
+      btn.style.background = ""
+      btn.style.color = ""
+    }, 2000)
+  }).catch(() => {
+    alert("Copy failed. Please select and copy manually.")
+  })
+}
+
+</script>
+
+</body>
+</html>

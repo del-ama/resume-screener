@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Screener</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #F7FAFC;
+      color: #2D3748;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #2C5282;
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #718096;
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 16px;
+      color: #2C5282;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #EBF4FF;
+    }
+
+    .tab-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 1px solid #CBD5E0;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      color: #4A5568;
+    }
+
+    .tab.active {
+      background: #2C5282;
+      color: white;
+      border-color: #2C5282;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    textarea {
+      width: 100%;
+      height: 180px;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid #CBD5E0;
+      border-radius: 6px;
+      resize: vertical;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #2C5282;
+    }
+
+    .upload-area {
+      border: 2px dashed #CBD5E0;
+      border-radius: 8px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .upload-area:hover { border-color: #2C5282; }
+
+    .upload-area input[type="file"] {
+      display: none;
+    }
+
+    .upload-icon { font-size: 32px; margin-bottom: 8px; }
+
+    .upload-label {
+      color: #2C5282;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .upload-hint {
+      color: #A0AEC0;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    #file-list {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .file-tag {
+      background: #EBF4FF;
+      color: #2C5282;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: #2C5282;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #1A365D; }
+
+    .btn:disabled {
+      background: #A0AEC0;
+      cursor: not-allowed;
+    }
+
+    .error {
+      background: #FFF5F5;
+      border: 1px solid #FC8181;
+      color: #C53030;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-top: 16px;
+      display: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #718096;
+      display: none;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 4px solid #EBF4FF;
+      border-top: 4px solid #2C5282;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>Resume Screener</h1>
+    <p class="subtitle">Upload a JD and multiple resumes — get AI-powered match scores, gap analysis, and candidate ranking.</p>
+
+    <form id="screenForm">
+
+      <!-- JD SECTION -->
+      <div class="card">
+        <h2>Step 1 — Job Description</h2>
+
+        <div class="tab-row">
+          <button type="button" class="tab active" onclick="switchTab('paste')">Paste Text</button>
+          <button type="button" class="tab" onclick="switchTab('upload')">Upload File</button>
+        </div>
+
+        <!-- Paste tab -->
+        <div class="tab-panel active" id="tab-paste">
+          <textarea name="jd_text" id="jd_text"
+            placeholder="Paste the full job description here..."></textarea>
+        </div>
+
+        <!-- Upload tab -->
+        <div class="tab-panel" id="tab-upload">
+          <div class="upload-area" onclick="document.getElementById('jd_file').click()">
+            <div class="upload-icon">📄</div>
+            <label class="upload-label">Click to upload JD</label>
+            <p class="upload-hint">PDF, DOCX, or TXT</p>
+            <input type="file" id="jd_file" name="jd_file"
+              accept=".pdf,.docx,.txt" onchange="showJDFile(this)">
+          </div>
+          <div id="jd-file-name" style="margin-top:10px; color:#2C5282; font-size:14px;"></div>
+        </div>
+      </div>
+
+      <!-- RESUMES SECTION -->
+      <div class="card">
+        <h2>Step 2 — Resumes</h2>
+
+        <div class="upload-area" onclick="document.getElementById('resumes').click()">
+          <div class="upload-icon">📂</div>
+          <label class="upload-label">Click to upload resumes</label>
+          <p class="upload-hint">PDF, DOCX, or TXT — select multiple files</p>
+          <input type="file" id="resumes" name="resumes"
+            accept=".pdf,.docx,.txt" multiple onchange="showResumeFiles(this)">
+        </div>
+
+        <div id="file-list"></div>
+      </div>
+
+      <!-- SUBMIT -->
+      <div class="card">
+        <button class="btn" type="button" onclick="submitForm()" id="submitBtn">
+          Screen Candidates
+        </button>
+        <div class="error" id="error"></div>
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p id="loading-text">Analysing candidates... this may take a moment</p>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <script>
+    // ---- TAB SWITCHING (Paste vs Upload for JD) ----
+    function switchTab(tab) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"))
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"))
+
+      if (tab === "paste") {
+        document.querySelectorAll(".tab")[0].classList.add("active")
+        document.getElementById("tab-paste").classList.add("active")
+      } else {
+        document.querySelectorAll(".tab")[1].classList.add("active")
+        document.getElementById("tab-upload").classList.add("active")
+      }
+    }
+
+    // ---- SHOW SELECTED JD FILE NAME ----
+    function showJDFile(input) {
+      const div = document.getElementById("jd-file-name")
+      div.textContent = input.files[0] ? "Selected: " + input.files[0].name : ""
+    }
+
+    // ---- SHOW SELECTED RESUME FILE TAGS ----
+    function showResumeFiles(input) {
+      const list = document.getElementById("file-list")
+      list.innerHTML = ""
+      Array.from(input.files).forEach(file => {
+        const tag = document.createElement("span")
+        tag.className = "file-tag"
+        tag.textContent = file.name
+        list.appendChild(tag)
+      })
+    }
+
+    // ---- FORM SUBMISSION ----
+    async function submitForm() {
+
+      const btn = document.getElementById("submitBtn")
+      const error = document.getElementById("error")
+      const loading = document.getElementById("loading")
+
+      error.style.display = "none"
+
+      // Build FormData — this handles both text fields and files
+      // FormData is the browser's way of packaging a mixed form submission
+      const formData = new FormData()
+
+      // Add JD — check which tab is active
+      const activeTab = document.querySelector(".tab.active").textContent.trim()
+
+      if (activeTab === "Paste Text") {
+        const jdText = document.getElementById("jd_text").value.trim()
+        if (!jdText) {
+          showError("Please paste a Job Description.")
+          return
+        }
+        formData.append("jd_text", jdText)
+      } else {
+        const jdFile = document.getElementById("jd_file").files[0]
+        if (!jdFile) {
+          showError("Please upload a JD file.")
+          return
+        }
+        formData.append("jd_file", jdFile)
+      }
+
+      // Add resumes
+      const resumeFiles = document.getElementById("resumes").files
+      if (resumeFiles.length === 0) {
+        showError("Please upload at least one resume.")
+        return
+      }
+
+      Array.from(resumeFiles).forEach(file => {
+        formData.append("resumes", file)
+      })
+
+      // Show loading state
+      btn.disabled = true
+      loading.style.display = "block"
+
+      // Update loading message based on number of resumes
+      const count = resumeFiles.length
+      document.getElementById("loading-text").textContent =
+        `Analysing ${count} candidate${count > 1 ? "s" : ""}... this may take a moment`
+
+      try {
+        // Send as multipart form — fetch handles this automatically
+        // when you pass FormData as the body (no Content-Type header needed)
+        const response = await fetch("/screen", {
+          method: "POST",
+          body: formData
+        })
+
+        if (response.redirected || response.ok) {
+          // Flask returns a rendered HTML page for results
+          // We replace the whole page with it
+          const html = await response.text()
+          document.open()
+          document.write(html)
+          document.close()
+        } else {
+          const data = await response.json()
+          showError(data.error || "Something went wrong.")
+        }
+
+      } catch (err) {
+        showError("Could not connect. Is Flask running?")
+      }
+
+      btn.disabled = false
+      loading.style.display = "none"
+    }
+
+    function showError(msg) {
+      const div = document.getElementById("error")
+      div.textContent = msg
+      div.style.display = "block"
+    }
+  </script>
+</body>
+</html>
