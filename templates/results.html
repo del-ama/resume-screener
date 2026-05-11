@@ -68,6 +68,18 @@
     .fit-spam         { background: #FED7D7; color: #9B2C2C; }
     .fit-irrelevant   { background: #E2E8F0; color: #4A5568; }
 
+    .band-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      background: #EDF2F7;
+      color: #4A5568;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
     .candidate-card {
       background: white;
       border-radius: 10px;
@@ -85,7 +97,6 @@
     .candidate-card.fit-spam-border         { border-left-color: #E53E3E; }
     .candidate-card.fit-irrelevant-border   { border-left-color: #A0AEC0; }
 
-    /* Only the header is clickable */
     .card-header {
       display: flex;
       justify-content: space-between;
@@ -132,7 +143,6 @@
 
     .expand-icon.open { transform: rotate(180deg); }
 
-    /* Clicking inside detail does NOT close the card */
     .card-detail {
       display: none;
       padding: 0 24px 24px;
@@ -198,7 +208,8 @@
     .detail-list.gaps            li::before { content: "✗ "; color: #E53E3E; font-weight: bold; }
     .detail-list.interview       li::before { content: "? "; color: #3182CE; font-weight: bold; }
     .detail-list.evidence-for    li::before { content: "✓ "; color: #38A169; font-weight: bold; }
-    .detail-list.evidence-against li::before { content: "⚠ "; color: #D69E2E; font-weight: bold; }
+    .detail-list.red-flags       li::before { content: "⚠ "; color: #E53E3E; font-weight: bold; }
+    .detail-list.domains         li::before { content: "◎ "; color: #718096; font-weight: bold; }
 
     .score-reasoning-box {
       background: #EBF4FF;
@@ -209,28 +220,78 @@
       margin-top: 16px;
     }
 
-    .recommendation-box {
-      background: #F0FFF4;
-      border-left: 3px solid #38A169;
-      padding: 12px 16px;
-      font-size: 14px;
-      line-height: 1.6;
-      color: #4A5568;
-      border-radius: 0 6px 6px 0;
+    /* Mandatory requirements table */
+    .mandatory-section {
+      margin-top: 16px;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .mandatory-section-header {
+      background: #2C5282;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 14px;
+    }
+
+    .mandatory-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 9px 14px;
+      border-bottom: 1px solid #EDF2F7;
+      font-size: 13px;
+    }
+
+    .mandatory-row:last-child { border-bottom: none; }
+
+    .mandatory-row.met   { background: #F0FFF4; }
+    .mandatory-row.unmet { background: #FFF5F5; }
+
+    .mandatory-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .mandatory-req  { font-weight: bold; color: #2D3748; }
+    .mandatory-reason { color: #718096; font-size: 12px; margin-top: 2px; }
+
+    /* Skills table */
+    .skills-section {
       margin-top: 16px;
     }
 
-    .mandatory-alert {
-      background: #FFFBEB;
-      border: 1px solid #F6E05E;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-top: 14px;
+    .skills-section h3 {
       font-size: 13px;
-      color: #744210;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #718096;
+      margin-bottom: 10px;
     }
 
-    .mandatory-alert strong { display: block; margin-bottom: 4px; }
+    .skill-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #F7FAFC;
+      font-size: 13px;
+    }
+
+    .skill-row:last-child { border-bottom: none; }
+
+    .skill-name { color: #2D3748; }
+
+    .skill-context {
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .ctx-hands_on  { background: #C6F6D5; color: #276749; }
+    .ctx-oversight { background: #BEE3F8; color: #2A69AC; }
+    .ctx-exposure  { background: #FEFCBF; color: #744210; }
 
     .spam-warning {
       background: #FFF5F5;
@@ -240,6 +301,22 @@
       margin-top: 14px;
       font-size: 13px;
       color: #9B2C2C;
+    }
+
+    .red-flags-box {
+      background: #FFF5F5;
+      border-left: 3px solid #E53E3E;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin-top: 16px;
+    }
+
+    .red-flags-box h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #C53030;
+      margin-bottom: 8px;
     }
 
     .interview-box {
@@ -258,6 +335,17 @@
       margin-bottom: 10px;
     }
 
+    .recommendation-box {
+      background: #F0FFF4;
+      border-left: 3px solid #38A169;
+      padding: 12px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #2D3748;
+      border-radius: 0 6px 6px 0;
+      margin-top: 16px;
+    }
+
     .no-results {
       text-align: center;
       padding: 60px;
@@ -271,6 +359,7 @@
       color: #A0AEC0;
       border-top: 1px solid #EDF2F7;
       margin-top: 32px;
+      line-height: 1.6;
     }
   </style>
 </head>
@@ -338,12 +427,16 @@
 
     <div class="candidate-card {{ border_class }}">
 
-      <!-- CARD HEADER — clicking here toggles the card -->
+      <!-- CARD HEADER -->
       <div class="card-header" onclick="toggleCard({{ loop.index }})">
         <div>
-          <div class="candidate-name">{{ r.name }}</div>
+          <div class="candidate-name">
+            {{ r.name }}
+            {% if r.experience_band is defined and r.experience_band and r.experience_band != 'Unknown' %}
+            <span class="band-pill">{{ r.experience_band }}</span>
+            {% endif %}
+          </div>
 
-          <!-- Current title and company — only shown if available -->
           {% set title = r.current_title | default('') %}
           {% set company = r.current_company | default('') %}
           {% if title and title != 'NULL' and company and company != 'NULL' %}
@@ -385,10 +478,10 @@
         </div>
       </div>
 
-      <!-- CARD DETAIL — clicking inside does NOT close the card -->
+      <!-- CARD DETAIL -->
       <div class="card-detail" id="detail-{{ loop.index }}">
 
-        <!-- 1. Score bars -->
+        <!-- 1. Score Bars -->
         <div class="score-bars">
           {% for label, value in [
             ('Skills Match',     r.skills_match     | default(0)),
@@ -417,19 +510,33 @@
         </div>
         {% endif %}
 
-        <!-- 3. Mandatory Requirements Alert -->
-        {% if not r.mandatory_requirements_met | default(true) %}
-        <div class="mandatory-alert">
-          <strong>⚠ Mandatory Requirements Not Met</strong>
-          {% for gap in r.mandatory_gaps | default([]) %}
-          <div>• {{ gap }}</div>
+        <!-- 3. Mandatory Requirements — always shown -->
+        {% if r.mandatory_requirements is defined %}
+        <div class="mandatory-section" style="margin-top:16px;">
+          <div class="mandatory-section-header">Mandatory Requirements</div>
+          {% if r.mandatory_requirements | length == 0 %}
+          <div class="mandatory-row" style="background:#F7FAFC;">
+            <span style="font-size:13px; color:#718096; font-style:italic;">
+              No mandatory requirements explicitly stated in the JD.
+            </span>
+          </div>
+          {% else %}
+          {% for req in r.mandatory_requirements %}
+          <div class="mandatory-row {{ 'met' if req.met else 'unmet' }}">
+            <span class="mandatory-icon">{{ '✓' if req.met else '✗' }}</span>
+            <div>
+              <div class="mandatory-req">{{ req.requirement }}</div>
+              <div class="mandatory-reason">{{ req.reason }}</div>
+            </div>
+          </div>
           {% endfor %}
+          {% endif %}
         </div>
         {% endif %}
 
         <!-- 4. Keyword Spam Warning -->
         {% if cat == 'keyword_spam' %}
-        <div class="spam-warning">
+        <div class="spam-warning" style="margin-top:14px;">
           <strong>⚠ Possible Keyword Spam Detected</strong>
           Resume language closely mirrors the JD but may lack genuine depth.
           Recommend a screening call to verify before shortlisting.
@@ -457,32 +564,59 @@
           </div>
         </div>
 
-        <!-- 6. Supporting Evidence and Evidence Against side by side -->
-        {% if r.evidence is defined %}
+        <!-- 6. Supporting Evidence and Red Flags side by side -->
         <div class="detail-grid" style="margin-top:20px;">
+          {% if r.evidence is defined and r.evidence.supporting | default([]) | length > 0 %}
           <div class="detail-section">
             <h3>Supporting Evidence</h3>
             <ul class="detail-list evidence-for">
-              {% for e in r.evidence.supporting | default([]) %}
-              <li>{{ e }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-
-          {% if r.evidence.against | default([]) | length > 0 %}
-          <div class="detail-section">
-            <h3>Red Flags</h3>
-            <ul class="detail-list evidence-against">
-              {% for e in r.evidence.against | default([]) %}
+              {% for e in r.evidence.supporting %}
               <li>{{ e }}</li>
               {% endfor %}
             </ul>
           </div>
           {% endif %}
+
+          {% if r.red_flags | default([]) | length > 0 %}
+          <div class="detail-section">
+            <h3>Red Flags</h3>
+            <ul class="detail-list red-flags">
+              {% for f in r.red_flags %}
+              <li>{{ f }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- 7. Skills Relevant to JD -->
+        {% if r.skills is defined and r.skills | length > 0 %}
+        <div class="skills-section">
+          <h3>Skills Relevant to This Role</h3>
+          {% for skill in r.skills %}
+          <div class="skill-row">
+            <span class="skill-name">{{ skill.skill }}</span>
+            <span class="skill-context ctx-{{ skill.context }}">
+              {{ skill.context | replace('_', ' ') | title }}
+            </span>
+          </div>
+          {% endfor %}
         </div>
         {% endif %}
 
-        <!-- 7. Interview Focus Areas -->
+        <!-- 8. Industries and Domains -->
+        {% if r.industries_and_domains is defined and r.industries_and_domains | length > 0 %}
+        <div class="detail-section" style="margin-top:16px;">
+          <h3>Industries &amp; Domains</h3>
+          <ul class="detail-list domains">
+            {% for d in r.industries_and_domains %}
+            <li>{{ d }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- 9. Interview Focus Areas -->
         {% if r.interview_focus_areas | default([]) | length > 0 %}
         <div class="interview-box">
           <h3>Interview Focus Areas</h3>
@@ -494,7 +628,7 @@
         </div>
         {% endif %}
 
-        <!-- 8. Recruiter Recommendation -->
+        <!-- 10. Recruiter Recommendation -->
         {% if r.recommendation is defined and r.recommendation %}
         <div class="recommendation-box">
           <strong>Recruiter Recommendation:</strong><br>
@@ -514,8 +648,8 @@
 
 <!-- DISCLAIMER -->
 <div class="disclaimer">
-  AI-generated screening results are indicative only and may contain errors.
-  All hiring decisions must be reviewed and confirmed by a qualified human recruiter.
+  AI-generated screening results are indicative only and may contain errors.<br>
+  All hiring decisions must be reviewed and confirmed by a qualified human recruiter.<br>
   Scores and assessments are directional guides, not definitive evaluations.
 </div>
 
@@ -523,8 +657,6 @@
 <script>
   window.screeningResults = {{ results | tojson }};
   window.jobTitle = {{ job_title | tojson }};
-
-  // Strip any newlines from job title
   window.jobTitle = window.jobTitle.replace(/[\n\r]/g, " ").trim()
 
   function toggleCard(index) {
@@ -562,7 +694,6 @@
     document.querySelectorAll(".card-detail").forEach(d => d.classList.add("open"))
     document.querySelectorAll(".expand-icon").forEach(i => i.classList.add("open"))
 
-    // Copy all visible text from the page
     const text = document.querySelector(".container").innerText
 
     navigator.clipboard.writeText(text).then(() => {
