@@ -317,11 +317,15 @@
     {% set score = r.overall_match | default(0) %}
     {% set score_class = 'score-high' if score >= 70 else ('score-mid' if score >= 40 else 'score-low') %}
 
-    <div class="candidate-card {{ border_class }}"
-         onclick="toggleCard({{ loop.index }})">
+    <div class="candidate-card {{ border_class }}">
+
+    <!-- <div class="candidate-card {{ border_class }}"
+         onclick="toggleCard({{ loop.index }})"> -->
 
       <!-- CARD HEADER -->
-      <div class="card-header">
+      <div class="card-header"
+       onclick="toggleCard({{ loop.index }})">
+      <!-- <div class="card-header"> -->
         <div>
           <div class="candidate-name">{{ r.name }}</div>
           <div class="candidate-file">{{ r.filename }}</div>
@@ -357,7 +361,12 @@
       </div>
 
       <!-- CARD DETAIL -->
-      <div class="card-detail" id="detail-{{ loop.index }}" onclick="event.stopPropagation()">
+       <div class="card-detail"
+       id="detail-{{ loop.index }}"
+       onclick="arguments[0].stopPropagation()">
+       
+      <!-- <div class="card-detail" id="detail-{{ loop.index }}" onclick="event.stopPropagation()"> -->
+        
 
         <!-- Score bars -->
         <div class="score-bars">
@@ -482,6 +491,7 @@
 
         <!-- Overall Summary -->
         <div class="summary-text">
+            <strong>Overall Summary:</strong><br>
           {{ r.summary | default('No summary available.') }}
         </div>
 
@@ -571,6 +581,11 @@ function copyToClipboard() {
       text += `   Recommendation:\n`
       text += `   ${r.recommendation}\n`
     }
+
+    if (r.summary) {
+    text += `   Summary:\n`
+    text += `   ${r.summary}\n`
+}
 
     text += `\n${"-".repeat(50)}\n\n`
   })
