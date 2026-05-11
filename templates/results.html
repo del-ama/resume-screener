@@ -62,11 +62,11 @@
       font-weight: bold;
     }
 
-    .fit-exact       { background: #C6F6D5; color: #276749; }
-    .fit-semantic    { background: #BEE3F8; color: #2A69AC; }
-    .fit-transferable{ background: #FEFCBF; color: #744210; }
-    .fit-spam        { background: #FED7D7; color: #9B2C2C; }
-    .fit-irrelevant  { background: #E2E8F0; color: #4A5568; }
+    .fit-exact        { background: #C6F6D5; color: #276749; }
+    .fit-semantic     { background: #BEE3F8; color: #2A69AC; }
+    .fit-transferable { background: #FEFCBF; color: #744210; }
+    .fit-spam         { background: #FED7D7; color: #9B2C2C; }
+    .fit-irrelevant   { background: #E2E8F0; color: #4A5568; }
 
     .candidate-card {
       background: white;
@@ -85,7 +85,7 @@
     .candidate-card.fit-spam-border         { border-left-color: #E53E3E; }
     .candidate-card.fit-irrelevant-border   { border-left-color: #A0AEC0; }
 
-    /* Header is clickable, rest of card is not */
+    /* Only the header is clickable */
     .card-header {
       display: flex;
       justify-content: space-between;
@@ -96,8 +96,9 @@
 
     .card-header:hover { background: #F7FAFC; }
 
-    .candidate-name { font-size: 17px; font-weight: bold; color: #2D3748; }
-    .candidate-file { font-size: 12px; color: #A0AEC0; margin-top: 3px; }
+    .candidate-name    { font-size: 17px; font-weight: bold; color: #2D3748; }
+    .candidate-current { font-size: 13px; color: #4A5568; margin-top: 3px; }
+    .candidate-file    { font-size: 12px; color: #A0AEC0; margin-top: 2px; }
 
     .card-right {
       display: flex;
@@ -131,7 +132,7 @@
 
     .expand-icon.open { transform: rotate(180deg); }
 
-    /* Detail panel — clicking inside does NOT close the card */
+    /* Clicking inside detail does NOT close the card */
     .card-detail {
       display: none;
       padding: 0 24px 24px;
@@ -165,7 +166,7 @@
       margin-bottom: 10px;
     }
 
-    .bar-label  { font-size: 13px; color: #4A5568; width: 140px; flex-shrink: 0; }
+    .bar-label { font-size: 13px; color: #4A5568; width: 140px; flex-shrink: 0; }
 
     .bar-track {
       flex: 1;
@@ -195,10 +196,9 @@
     .detail-list li:last-child { border-bottom: none; }
     .detail-list.strengths       li::before { content: "✓ "; color: #38A169; font-weight: bold; }
     .detail-list.gaps            li::before { content: "✗ "; color: #E53E3E; font-weight: bold; }
-    .detail-list.suggestions     li::before { content: "→ "; color: #3182CE; font-weight: bold; }
-    .detail-list.mandatory       li::before { content: "⚠ "; color: #D69E2E; font-weight: bold; }
+    .detail-list.interview       li::before { content: "? "; color: #3182CE; font-weight: bold; }
     .detail-list.evidence-for    li::before { content: "✓ "; color: #38A169; font-weight: bold; }
-    .detail-list.evidence-against li::before { content: "✗ "; color: #E53E3E; font-weight: bold; }
+    .detail-list.evidence-against li::before { content: "⚠ "; color: #D69E2E; font-weight: bold; }
 
     .score-reasoning-box {
       background: #EBF4FF;
@@ -212,17 +212,6 @@
     .recommendation-box {
       background: #F0FFF4;
       border-left: 3px solid #38A169;
-      padding: 12px 16px;
-      font-size: 14px;
-      line-height: 1.6;
-      color: #4A5568;
-      border-radius: 0 6px 6px 0;
-      margin-top: 16px;
-    }
-
-    .summary-text {
-      background: #F7FAFC;
-      border-left: 3px solid #2C5282;
       padding: 12px 16px;
       font-size: 14px;
       line-height: 1.6;
@@ -253,10 +242,35 @@
       color: #9B2C2C;
     }
 
+    .interview-box {
+      background: #EBF8FF;
+      border-left: 3px solid #3182CE;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin-top: 16px;
+    }
+
+    .interview-box h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #2A69AC;
+      margin-bottom: 10px;
+    }
+
     .no-results {
       text-align: center;
       padding: 60px;
       color: #A0AEC0;
+    }
+
+    .disclaimer {
+      text-align: center;
+      padding: 24px 20px;
+      font-size: 12px;
+      color: #A0AEC0;
+      border-top: 1px solid #EDF2F7;
+      margin-top: 32px;
     }
   </style>
 </head>
@@ -324,11 +338,22 @@
 
     <div class="candidate-card {{ border_class }}">
 
-      <!-- CARD HEADER — clicking here opens/closes the card -->
+      <!-- CARD HEADER — clicking here toggles the card -->
       <div class="card-header" onclick="toggleCard({{ loop.index }})">
         <div>
           <div class="candidate-name">{{ r.name }}</div>
+
+          <!-- Current title and company — only shown if available -->
+          {% set title = r.current_title | default('') %}
+          {% set company = r.current_company | default('') %}
+          {% if title and title != 'NULL' and company and company != 'NULL' %}
+          <div class="candidate-current">{{ title }} at {{ company }}</div>
+          {% elif title and title != 'NULL' %}
+          <div class="candidate-current">{{ title }}</div>
+          {% endif %}
+
           <div class="candidate-file">{{ r.filename }}</div>
+
           <div style="margin-top:8px;">
             {% set pill_class = {
               'exact_fit':        'fit-exact',
@@ -363,7 +388,7 @@
       <!-- CARD DETAIL — clicking inside does NOT close the card -->
       <div class="card-detail" id="detail-{{ loop.index }}">
 
-        <!-- Score bars -->
+        <!-- 1. Score bars -->
         <div class="score-bars">
           {% for label, value in [
             ('Skills Match',     r.skills_match     | default(0)),
@@ -382,7 +407,7 @@
           {% endfor %}
         </div>
 
-        <!-- Score Reasoning -->
+        <!-- 2. Score Reasoning -->
         {% if r.score_reasoning is defined %}
         <div class="score-reasoning-box">
           <strong>Score Reasoning:</strong><br>
@@ -392,7 +417,7 @@
         </div>
         {% endif %}
 
-        <!-- Mandatory requirements alert -->
+        <!-- 3. Mandatory Requirements Alert -->
         {% if not r.mandatory_requirements_met | default(true) %}
         <div class="mandatory-alert">
           <strong>⚠ Mandatory Requirements Not Met</strong>
@@ -402,16 +427,16 @@
         </div>
         {% endif %}
 
-        <!-- Keyword spam warning -->
+        <!-- 4. Keyword Spam Warning -->
         {% if cat == 'keyword_spam' %}
         <div class="spam-warning">
           <strong>⚠ Possible Keyword Spam Detected</strong>
           Resume language closely mirrors the JD but may lack genuine depth.
-          Recommend a screening call before shortlisting.
+          Recommend a screening call to verify before shortlisting.
         </div>
         {% endif %}
 
-        <!-- Strengths / Gaps / Suggestions / Mandatory Gaps -->
+        <!-- 5. Strengths and Gaps side by side -->
         <div class="detail-grid">
           <div class="detail-section">
             <h3>Strengths</h3>
@@ -430,29 +455,9 @@
               {% endfor %}
             </ul>
           </div>
-
-          <div class="detail-section">
-            <h3>Suggestions for Candidate</h3>
-            <ul class="detail-list suggestions">
-              {% for s in r.suggestions | default([]) %}
-              <li>{{ s }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-
-          {% if r.mandatory_gaps | default([]) | length > 0 %}
-          <div class="detail-section">
-            <h3>Mandatory Gaps</h3>
-            <ul class="detail-list mandatory">
-              {% for m in r.mandatory_gaps | default([]) %}
-              <li>{{ m }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
         </div>
 
-        <!-- Supporting / Against Evidence -->
+        <!-- 6. Supporting Evidence and Evidence Against side by side -->
         {% if r.evidence is defined %}
         <div class="detail-grid" style="margin-top:20px;">
           <div class="detail-section">
@@ -463,30 +468,39 @@
               {% endfor %}
             </ul>
           </div>
+
+          {% if r.evidence.against | default([]) | length > 0 %}
           <div class="detail-section">
-            <h3>Evidence Against</h3>
+            <h3>Red Flags</h3>
             <ul class="detail-list evidence-against">
               {% for e in r.evidence.against | default([]) %}
               <li>{{ e }}</li>
               {% endfor %}
             </ul>
           </div>
+          {% endif %}
         </div>
         {% endif %}
 
-        <!-- Recruiter Recommendation -->
+        <!-- 7. Interview Focus Areas -->
+        {% if r.interview_focus_areas | default([]) | length > 0 %}
+        <div class="interview-box">
+          <h3>Interview Focus Areas</h3>
+          <ul class="detail-list interview">
+            {% for q in r.interview_focus_areas %}
+            <li>{{ q }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <!-- 8. Recruiter Recommendation -->
         {% if r.recommendation is defined and r.recommendation %}
         <div class="recommendation-box">
           <strong>Recruiter Recommendation:</strong><br>
           {{ r.recommendation }}
         </div>
         {% endif %}
-
-        <!-- Overall Summary -->
-        <div class="summary-text">
-          <strong>Summary:</strong><br>
-          {{ r.summary | default('No summary available.') }}
-        </div>
 
       </div>
     </div>
@@ -496,6 +510,13 @@
     <div class="no-results">No results to display.</div>
   {% endif %}
 
+</div>
+
+<!-- DISCLAIMER -->
+<div class="disclaimer">
+  AI-generated screening results are indicative only and may contain errors.
+  All hiring decisions must be reviewed and confirmed by a qualified human recruiter.
+  Scores and assessments are directional guides, not definitive evaluations.
 </div>
 
 <!-- Results data for JavaScript -->
@@ -537,7 +558,7 @@
   function copyToClipboard() {
     const btn = document.getElementById("copyBtn")
 
-    // Expand all cards so all content is included in the copy
+    // Expand all cards so all content is included
     document.querySelectorAll(".card-detail").forEach(d => d.classList.add("open"))
     document.querySelectorAll(".expand-icon").forEach(i => i.classList.add("open"))
 
@@ -545,9 +566,9 @@
     const text = document.querySelector(".container").innerText
 
     navigator.clipboard.writeText(text).then(() => {
-      btn.textContent          = "✓ Copied!"
-      btn.style.background     = "#C6F6D5"
-      btn.style.color          = "#276749"
+      btn.textContent      = "✓ Copied!"
+      btn.style.background = "#C6F6D5"
+      btn.style.color      = "#276749"
       setTimeout(() => {
         btn.textContent      = "⎘ Copy"
         btn.style.background = ""
