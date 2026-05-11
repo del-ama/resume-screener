@@ -7,7 +7,6 @@ from flask import Flask, request, jsonify, render_template, Response
 from groq import Groq
 from utils import extract_text, get_candidate_name, extract_candidate_name
 
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -40,13 +39,11 @@ def screen():
     if not jd_text:
         return jsonify({"error": "Please provide a Job Description."}), 400
 
-
     # ---- STEP 2: GET ALL RESUME FILES ----
     resume_files = request.files.getlist("resumes")
 
     if not resume_files or resume_files[0].filename == "":
         return jsonify({"error": "Please upload at least one resume."}), 400
-
 
     # ---- STEP 3: EXTRACT TEXT FROM EACH RESUME ----
     candidates = []
@@ -64,7 +61,6 @@ def screen():
             "resume_text": text
         })
 
-
     # ---- STEP 4: SCREEN EACH CANDIDATE ----
     results = []
 
@@ -78,7 +74,6 @@ def screen():
         result["filename"] = candidate["filename"]
         results.append(result)
 
-
     # ---- STEP 5: SORT BY MATCH SCORE ----
     results.sort(key=lambda x: x.get("overall_match", 0), reverse=True)
 
@@ -91,7 +86,7 @@ def screen():
 # ---- AI FUNCTIONS ----
 
 def extract_job_title(jd_text):
-    """Extract just the job title from the JD."""
+    """Extract just the job title from the JD — single line, max 5 words."""
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -99,14 +94,20 @@ def extract_job_title(jd_text):
             temperature=0,
             messages=[{
                 "role": "user",
-                "content": f"""Extract only the job title from this job description.
-Return just the job title, nothing else. No punctuation, no explanation.
+                "content": f"""Extract only the single job title from this job description.
+Return maximum 5 words. No punctuation, no explanation, no extra lines.
+Only the job title itself on one line.
 
 JD:
 {jd_text[:500]}"""
             }]
         )
-        return response.choices[0].message.content.strip()
+        title = response.choices[0].message.content.strip()
+        # Strip all newlines — critical for HTTP headers
+        title = title.replace("\n", " ").replace("\r", " ")
+        # Take only the first line in case AI returns multiple
+        title = title.split("\n")[0].strip()
+        return title
     except:
         return "Role"
 
@@ -236,45 +237,55 @@ RESUME — {name}:
 
 @app.route("/download-csv", methods=["POST"])
 def download_csv():
-    """Receives results as JSON, returns downloadable CSV."""
+    """
+    Dynamic CSV — automatically includes every field from the AI response.
+    No manual column updates needed when prompt changes.
+    """
     data = request.get_json()
     results = data.get("results", [])
     job_title = data.get("job_title", "Role")
-    job_title = job_title.replace("\n", "").replace("\r", "")
+
+    # Strip newlines from job title — critical, newlines in HTTP headers cause 500 errors
+    job_title = job_title.replace("\n", " ").replace("\r", " ").strip()
+
+    if not results:
+        return jsonify({"error": "No results to download"}), 400
+
+    def flatten(value):
+        """Convert any value type to a clean readable string for CSV."""
+        if isinstance(value, list):
+            return " | ".join(str(v) for v in value)
+        if isinstance(value, dict):
+            return " | ".join(f"{k}: {v}" for k, v in value.items())
+        if isinstance(value, bool):
+            return "Yes" if value else "No"
+        return str(value) if value is not None else ""
+
+    # Build headers dynamically from all keys across all results
+    # Preserves insertion order — first result's key order leads
+    all_keys = []
+    seen = set()
+    for r in results:
+        for k in r.keys():
+            if k not in seen:
+                all_keys.append(k)
+                seen.add(k)
 
     output = io.StringIO()
     writer = csv.writer(output)
-
-    writer.writerow([
-        "Candidate", "File", "Fit Category", "Overall Match %",
-        "Skills Match %", "Experience Match %", "Education Match %",
-        "Mandatory Requirements Met", "Mandatory Gaps",
-        "Strengths", "Gaps", "Recommendation", "Summary"
-    ])
+    writer.writerow(all_keys)
 
     for r in results:
-        writer.writerow([
-            r.get("name", ""),
-            r.get("filename", ""),
-            r.get("fit_category", "").replace("_", " ").title(),
-            r.get("overall_match", 0),
-            r.get("skills_match", 0),
-            r.get("experience_match", 0),
-            r.get("education_match", 0),
-            "Yes" if r.get("mandatory_requirements_met", True) else "No",
-            " | ".join(r.get("mandatory_gaps", [])),
-            " | ".join(r.get("strengths", [])),
-            " | ".join(r.get("gaps", [])),
-            r.get("recommendation", ""),
-            r.get("summary", "")
-        ])
+        writer.writerow([flatten(r.get(k, "")) for k in all_keys])
 
     output.seek(0)
+
+    safe_title = job_title.replace(" ", "_")
     return Response(
         output.getvalue(),
         mimetype="text/csv",
         headers={
-            "Content-Disposition": f"attachment; filename=screening_{job_title.replace(' ', '_')}.csv"
+            "Content-Disposition": f"attachment; filename=screening_{safe_title}.csv"
         }
     )
 
