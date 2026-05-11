@@ -233,9 +233,10 @@ RESUME — {name}:
             "recommendation": "Analysis failed. Please try again.",
             "strengths": ["Could not parse response"],
             "gaps": ["Could not parse response"],
-            "suggestions": ["Please try again"],
             "mandatory_requirements_met": False,
-            "mandatory_gaps": ["Could not parse response"]"
+            "current_title": "Unknown",
+            "current_company": "Unknown",
+            "interview_focus_areas": []
         }
 
     except Exception as e:
