@@ -137,6 +137,36 @@ For explainability, provide specific reasoning for each score and cite
 actual evidence from the resume — specific job titles, years, skills, 
 certifications, or phrases that drove your assessment.
 
+Strengths must cite specific evidence only — project names, technologies, 
+measurable outcomes, role titles. Never write generic statements like 
+"strong technical skills" or "good educational background". If you cannot 
+cite specific evidence, do not include it as a strength.
+
+Gaps = all shortcomings including inferred ones. Be specific about what 
+is missing and why it matters for this role.
+
+mandatory_requirements_met and mandatory_gaps apply ONLY when the JD 
+explicitly uses words like "required", "mandatory", "must have", 
+"essential". Do not infer mandatory requirements. If the JD does not 
+explicitly mark something as mandatory, it does not go here even if 
+it is a significant gap.
+
+evidence.against must contain specific things IN the resume that 
+actively raise concerns — unexplained employment gaps, frequent job 
+changes, claims without supporting evidence, inconsistencies. 
+Do NOT restate gaps or missing skills here. If no genuine red flags 
+exist, return an empty list.
+
+interview_focus_areas should be specific questions or areas the 
+interviewer should probe, based on the gaps and evidence found. 
+Write them as actionable interview prompts, not generic advice.
+Example: "Ask candidate to walk through a specific end-to-end data 
+analysis project they owned independently"
+
+recommendation should state a clear hiring action — shortlist for 
+X round / reject because Y / hold pending Z — followed by the 
+single most important reason.
+
 Return ONLY valid JSON. No explanation, no markdown, no backticks.
 Exactly this structure:
 
@@ -159,10 +189,10 @@ Exactly this structure:
   "recommendation": "<recruiter-style 2-3 sentence narrative — what to do with this candidate and why>",
   "strengths": ["<string>", "<string>", "<string>"],
   "gaps": ["<string>", "<string>", "<string>"],
-  "suggestions": ["<string>", "<string>", "<string>"],
   "mandatory_requirements_met": <true or false>,
-  "mandatory_gaps": ["<string>"],
-  "summary": "<2 sentence overall assessment>"
+  "current_title": "<candidate's most recent job title or NULL if not found>",
+  "current_company": "<candidate's most recent employer or NULL if not found>",
+  "interview_focus_areas": ["<specific question or area to probe>", "<another>", "<another>"]
 }}
 
 JOB DESCRIPTION:
@@ -205,8 +235,7 @@ RESUME — {name}:
             "gaps": ["Could not parse response"],
             "suggestions": ["Please try again"],
             "mandatory_requirements_met": False,
-            "mandatory_gaps": ["Could not parse response"],
-            "summary": "Analysis failed. Please try again."
+            "mandatory_gaps": ["Could not parse response"]"
         }
 
     except Exception as e:
@@ -228,8 +257,7 @@ RESUME — {name}:
             "gaps": [],
             "suggestions": [],
             "mandatory_requirements_met": False,
-            "mandatory_gaps": [],
-            "summary": f"Error: {str(e)}"
+            "mandatory_gaps": []"
         }
 
 
