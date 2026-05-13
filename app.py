@@ -2,6 +2,7 @@ import os
 import json
 import csv
 import io
+import time
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template, Response
 from groq import Groq
@@ -50,8 +51,6 @@ def screen():
 
     for resume_file in resume_files:
         text = extract_text(resume_file, resume_file.filename)
-
-        # Try AI name extraction first, fall back to filename
         ai_name = extract_candidate_name(text, client)
         name = ai_name if ai_name else get_candidate_name(text, resume_file.filename)
 
@@ -64,7 +63,10 @@ def screen():
     # ---- STEP 4: SCREEN EACH CANDIDATE ----
     results = []
 
-    for candidate in candidates:
+    for i, candidate in enumerate(candidates):
+        if i > 0:
+            time.sleep(3)
+
         result = screen_candidate(
             candidate["name"],
             candidate["resume_text"],
@@ -86,7 +88,7 @@ def screen():
 # ---- AI FUNCTIONS ----
 
 def extract_job_title(jd_text):
-    """Extract just the job title from the JD — single line, max 5 words."""
+    """Extract just the job title from the JD."""
     try:
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -94,187 +96,224 @@ def extract_job_title(jd_text):
             temperature=0,
             messages=[{
                 "role": "user",
-                "content": f"""Extract only the single job title from this job description.
-Return maximum 5 words. No punctuation, no explanation, no extra lines.
-Only the job title itself on one line.
+                "content": f"""Extract only the job title. One line, max 5 words, no punctuation.
 
 JD:
-{jd_text[:500]}"""
+{jd_text[:300]}"""
             }]
         )
         title = response.choices[0].message.content.strip()
         title = title.replace("\n", " ").replace("\r", " ")
-        title = title.split("\n")[0].strip()
-        return title
+        return title.split("\n")[0].strip()
     except:
         return "Role"
 
 
-def screen_candidate(name, resume_text, jd_text):
-    """Send one resume + JD to AI. Returns structured dict."""
+def build_prompt(name, resume_text, jd_text):
+    """Compressed prompt — same output quality, minimal token usage."""
+    resume_truncated = resume_text[:3000] if len(resume_text) > 3000 else resume_text
+    jd_truncated = jd_text[:2000] if len(jd_text) > 2000 else jd_text
 
-    prompt = f"""You are an expert HR recruiter and talent assessor with deep
-experience in resume screening and candidate evaluation.
+    return f"""You are an expert HR recruiter. Analyse the resume against the JD.
+Return ONLY valid JSON — no markdown, no backticks, no explanation.
 
-Analyse the resume against the job description and return a structured assessment.
+RULES:
 
-CLASSIFICATION RULES — assign exactly one fit_category:
-- "exact_fit": Candidate meets virtually all requirements directly and explicitly
-- "semantic_fit": Different job titles or words but clearly the same capability
-  (e.g. "People Analytics" vs "HR Data Analysis")
-- "transferable_fit": Different domain but skills genuinely transfer
-  (e.g. Operations Manager applying for HR Ops role)
-- "keyword_spam": Resume mirrors JD language suspiciously closely but
-  lacks genuine depth, detail, or evidence of actual experience
-- "irrelevant": No meaningful overlap with the JD requirements
+1. FIT CATEGORY: exact_fit / semantic_fit / transferable_fit / irrelevant
+   - exact_fit: meets all requirements directly
+   - semantic_fit: same capability, different terminology
+   - transferable_fit: different domain, skills genuinely transfer
+   - irrelevant: no meaningful overlap
 
-EXPERIENCE BAND RULE:
-Assign exactly one band based on overall career stage visible in the resume:
-- "Early Career": 0-3 years total experience or fresh graduate
-- "Mid Level": 3-8 years with growing ownership and specialisation
-- "Senior": 8-15 years with clear domain expertise and independent delivery
-- "Leadership": 15+ years or clear people/org leadership regardless of years
-Do not count internships or part-time roles as full experience.
+2. EXPERIENCE BAND: count full-time roles only, not internships or side projects.
+   Add up sequential non-overlapping role durations to get total years.
+   Do not count a role twice. If roles overlap, count the period once.
+   - Early Career: 0-3 yrs | Mid Level: 3-8 yrs | Senior: 8-15 yrs | Leadership: 15+ yrs
+   experience_band_reasoning: one short sentence stating total years counted and which roles.
+   Format: "~X years total: [Role A] (Y yrs) + [Role B] (Z yrs)"
 
-CURRENT TITLE AND COMPANY RULE:
-Extract the candidate's most recent job title and employer.
-If not clearly stated, return NULL. Do not guess or infer.
+3. CURRENT ROLE: most recent substantive employed role at a named organisation.
+   Ignore YouTube/creator/freelance/side projects unless only experience.
+   Return NULL if not found.
 
-MANDATORY REQUIREMENTS RULE:
-List every requirement the JD explicitly marks as "required", "mandatory",
-"must have", or "essential". For each one, state whether the resume
-meets it or not with a brief reason.
-If the JD has no explicitly marked mandatory requirements, return an empty list.
-Do NOT infer mandatory requirements — only use what is explicitly stated.
+4. MANDATORY REQUIREMENTS: only items JD explicitly marks as
+   required/mandatory/must-have/essential. Empty list if none stated. Never infer.
 
-STRENGTHS RULE:
-Strengths must cite specific evidence — project names, technologies,
-measurable outcomes, role titles, years of experience.
-Never write generic statements like "strong technical skills".
-If you cannot cite specific evidence, do not include it.
+5. STRENGTHS: interpreted takeaways with specific evidence.
+   Format: "[capability] — evidenced by [specific project/metric/role]"
+   Use consistent past tense: "evidenced by building X" not "evidenced by built X"
+   No generic statements. Omit if no specific evidence exists.
 
-GAPS RULE:
-Gaps = all shortcomings including inferred ones.
-Be specific about what is missing and why it matters for this role.
+6. GAPS: all shortcomings specific to this role. State why each matters.
+   Flag missing mandatory requirements as gaps with higher priority.
 
-RED FLAGS RULE:
-Flag any of the following if present in the resume:
-- More than 2 roles shorter than 12 months (excluding internships/contracts)
-- Any unexplained gap longer than 6 months between roles
-- Applying significantly below current seniority level (overqualification)
-- Claims in skills section with zero supporting evidence in experience
-If none of these are present, return an empty list. Do not fabricate red flags.
+7. HIGHLIGHTS: the 3-5 most impressive signals from this resume, priority order:
+   a) Quantified achievements — metrics, percentages, scale
+   b) Career spikes — promotions, high-profile projects, scale milestones
+   c) Pedigree — top-tier institutions, well-known employers, notable brands
+   Short punchy lines only. Do not repeat content from Strengths.
+   If no highlights exist, return empty list.
+   For irrelevant candidates, return empty list.
 
-SKILLS RULE:
-List only skills that are relevant to this specific JD.
-For each skill, assign exactly one context:
-- "hands_on": candidate has directly used this skill in a project or role
-- "oversight": candidate has managed or directed others using this skill
-- "exposure": candidate mentions it in passing or education with no project evidence
-Do not list skills not relevant to the JD.
+8. RED FLAGS — always return this field:
+   Only flag: (a) 2+ roles under 12 months excluding contracts/internships,
+   (b) unexplained gaps over 6 months, (c) clear overqualification,
+   (d) skills claimed with zero supporting project evidence.
+   Missing skills are NOT red flags. If none: ["No red flags identified."]
 
-INDUSTRIES AND DOMAINS RULE:
-List the industries and functional domains the candidate has worked in,
-based on company names and role descriptions in the resume.
-Examples of industries: FMCG, Banking, Healthcare, IT Services, Consulting
-Examples of domains: Data Analytics, HR Operations, Product Management, Finance
+9. CANDIDATE SKILLS: JD-relevant skills only.
+   If candidate has NO skills relevant to the JD, return empty list [].
+   Do not list skills completely unrelated to the role.
+   context: hands_on / oversight / exposure
 
-EVIDENCE AGAINST RULE:
-Specific things IN the resume that actively raise concerns — not gap restatements.
-Unexplained employment gaps, frequent short tenures, inconsistencies between
-claimed skills and described experience. If none, return empty list.
+10. INDUSTRIES AND DOMAINS: from company names and role descriptions only.
+    2-4 items max. Be specific — not "Technology" but "B2B SaaS" or "Fintech".
 
-INTERVIEW FOCUS AREAS RULE:
-Specific, actionable interview prompts based on gaps found.
-Example: "Ask candidate to walk through an end-to-end data analysis project
-they owned independently — assess depth of contribution vs team support."
-Not generic advice. Minimum 3 prompts.
+11. INTERVIEW FOCUS AREAS:
+    For irrelevant candidates: return []
+    For all others: candidate-specific questions only.
+    Each must reference a specific gap, claim, or inconsistency in THIS resume.
+    BANNED — do not write any variation of:
+    - "How do you stay up-to-date with new tools?"
+    - "Describe a time you communicated with a non-technical audience"
+    - "Walk me through your experience with X" (too broad)
+    - "Can you give an example of a project you led?"
+    GOOD examples:
+    - "Your resume shows Looker but role needs Tableau — have you used Tableau,
+       and what would your ramp-up look like?"
+    - "You list Python as a skill but no project uses it — describe a specific
+       script or analysis you built."
+    - "You were promoted to Senior in 18 months — what drove that, and how
+       does it translate here?"
+    Min 3, max 5. All must be specific to this candidate.
 
-RECOMMENDATION RULE:
-First line: clear hiring action — Shortlist for [round] / Reject / Hold.
-Second line: single most important reason.
+12. RECOMMENDATION:
+    Write 2-3 sentences from the recruiter to the hiring manager.
+    Tone: candid and direct, as a recruiter speaking — not a formal report.
 
-Return ONLY valid JSON. No explanation, no markdown, no backticks.
-Exactly this structure:
+    Include:
+    - Who the candidate is: current role, years, domain
+    - The single most important reason to pursue or pass
+    - A clear value judgement: worth a conversation or not
 
+    Calibration:
+    - 0-1 missing mandatory requirements → recommend with caveats
+    - 2+ missing → flag gaps clearly, cautious tone
+    - 3+ missing → not recommended, be direct
+    - irrelevant fit → one sentence, do not recommend
+
+    Do not mention next steps, interview rounds, or the screening tool.
+    Do not use phrases like "strong communicator" without specific evidence.
+
+13. EDUCATION SCORE:
+    100% only if JD specifies an exact degree AND candidate has it exactly.
+    80-90% if degree is relevant but not exactly specified.
+    60-70% if tangentially related.
+    Below 60% if unrelated or missing entirely.
+
+JSON STRUCTURE:
 {{
-  "overall_match": <integer 0-100>,
-  "skills_match": <integer 0-100>,
-  "experience_match": <integer 0-100>,
-  "education_match": <integer 0-100>,
+  "overall_match": <0-100>,
+  "skills_match": <0-100>,
+  "experience_match": <0-100>,
+  "education_match": <0-100>,
   "experience_band": <"Early Career"|"Mid Level"|"Senior"|"Leadership">,
-  "current_title": "<most recent job title or NULL>",
-  "current_company": "<most recent employer or NULL>",
-  "fit_category": <"exact_fit"|"semantic_fit"|"transferable_fit"|"keyword_spam"|"irrelevant">,
+  "experience_years": "<e.g. '~4 years'>",
+  "experience_band_reasoning": "<~X years total: Role A (Y yrs) + Role B (Z yrs)>",
+  "current_title": "<title or NULL>",
+  "current_company": "<company or NULL>",
+  "industries_and_domains": ["<specific industry or domain>"],
+  "fit_category": <"exact_fit"|"semantic_fit"|"transferable_fit"|"irrelevant">,
   "fit_reasoning": "<one sentence>",
   "score_reasoning": {{
-    "skills": "<one sentence citing specific skills found or missing>",
-    "experience": "<one sentence citing years and roles found vs required>",
-    "education": "<one sentence citing qualification found vs required>"
+    "skills": "<specific skills found or missing>",
+    "experience": "<years and roles vs required>",
+    "education": "<qualification found vs required>"
   }},
   "mandatory_requirements": [
-    {{
-      "requirement": "<the mandatory requirement from the JD>",
-      "met": <true or false>,
-      "reason": "<one sentence — what was found or missing in the resume>"
-    }}
+    {{"requirement": "<text>", "met": <true|false>, "reason": "<one sentence>"}}
   ],
-  "strengths": ["<specific strength with named evidence>", "<another>", "<another>"],
-  "gaps": ["<specific gap and why it matters>", "<another>", "<another>"],
-  "evidence": {{
-    "supporting": ["<specific project or achievement from resume>", "<another>", "<another>"],
-    "against": ["<specific concern from resume>"]
-  }},
-  "skills": [
-    {{
-      "skill": "<skill name>",
-      "context": <"hands_on"|"oversight"|"exposure">
-    }}
+  "highlights": ["<punchy achievement, spike, or pedigree signal>"],
+  "strengths": ["<capability — evidenced by specific detail>"],
+  "gaps": ["<specific gap — why it matters>"],
+  "candidate_skills": [
+    {{"skill": "<name>", "context": <"hands_on"|"oversight"|"exposure">}}
   ],
-  "industries_and_domains": ["<industry or domain>", "<another>"],
-  "red_flags": ["<specific red flag with detail>"],
-  "interview_focus_areas": ["<specific interview prompt>", "<another>", "<another>"],
-  "recommendation": "<Shortlist for X / Reject / Hold — reason on next line>"
+  "red_flags": ["<specific flag or 'No red flags identified.'>"],
+  "interview_focus_areas": ["<candidate-specific question or empty list>"],
+  "recommendation": "<Shortlist for X / Reject / Hold.\\nOne sentence reason.>"
 }}
 
 JOB DESCRIPTION:
-{jd_text}
+{jd_truncated}
 
 RESUME — {name}:
-{resume_text}
-"""
+{resume_truncated}"""
 
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            max_tokens=2000,
-            temperature=0,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
 
-        raw = response.choices[0].message.content.strip()
-        data = json.loads(raw)
-        return data
+def screen_candidate(name, resume_text, jd_text):
+    """Screen one candidate. Retries once on parse failure."""
+    prompt = build_prompt(name, resume_text, jd_text)
 
-    except json.JSONDecodeError:
-        return _fallback("Could not parse AI response")
+    for attempt in range(2):
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                max_tokens=4000,
+                temperature=0,
+                messages=[{"role": "user", "content": prompt}]
+            )
 
-    except Exception as e:
-        return _fallback(f"Error: {str(e)}")
+            raw = response.choices[0].message.content.strip()
+
+            # Strip markdown code fences if model wraps response
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            raw = raw.strip()
+
+            data = json.loads(raw)
+            return data
+
+        except json.JSONDecodeError:
+            if attempt == 0:
+                time.sleep(2)
+                continue
+            return _fallback("Could not parse AI response after retry")
+
+        except Exception as e:
+            error_str = str(e)
+            if attempt == 0:
+                time.sleep(2)
+                continue
+            # Give a clear, helpful message when rate limit is hit
+            # Covers both free tier daily limit and paid spend cap
+            if "429" in error_str or "rate_limit" in error_str.lower():
+                return _fallback(
+                    "Daily screening limit reached. "
+                    "Results will resume after midnight IST, "
+                    "or visit console.groq.com to upgrade your plan "
+                    "and set a spend limit."
+                )
+            return _fallback(f"Error: {str(e)}")
+
+    return _fallback("Analysis failed after retry")
 
 
 def _fallback(reason):
-    """Return a safe empty result when AI response fails."""
+    """Safe empty result when AI response fails."""
     return {
         "overall_match": 0,
         "skills_match": 0,
         "experience_match": 0,
         "education_match": 0,
         "experience_band": "Unknown",
+        "experience_years": "Unknown",
+        "experience_band_reasoning": reason,
         "current_title": "Unknown",
         "current_company": "Unknown",
+        "industries_and_domains": [],
         "fit_category": "irrelevant",
         "fit_reasoning": reason,
         "score_reasoning": {
@@ -283,12 +322,11 @@ def _fallback(reason):
             "education": "Could not parse"
         },
         "mandatory_requirements": [],
+        "highlights": [],
         "strengths": [],
         "gaps": [],
-        "evidence": {"supporting": [], "against": []},
-        "skills": [],
-        "industries_and_domains": [],
-        "red_flags": [],
+        "candidate_skills": [],
+        "red_flags": [reason],
         "interview_focus_areas": [],
         "recommendation": "Analysis failed. Please try again."
     }
@@ -298,10 +336,7 @@ def _fallback(reason):
 
 @app.route("/download-csv", methods=["POST"])
 def download_csv():
-    """
-    Dynamic CSV — automatically includes every field.
-    No manual updates needed when prompt changes.
-    """
+    """CSV with logical column ordering. New AI fields appended at end automatically."""
     data = request.get_json()
     results = data.get("results", [])
     job_title = data.get("job_title", "Role")
@@ -311,9 +346,7 @@ def download_csv():
         return jsonify({"error": "No results to download"}), 400
 
     def flatten(value):
-        """Convert any value type to a clean readable string for CSV."""
         if isinstance(value, list):
-            # Handle list of dicts (e.g. skills, mandatory_requirements)
             parts = []
             for item in value:
                 if isinstance(item, dict):
@@ -327,21 +360,31 @@ def download_csv():
             return "Yes" if value else "No"
         return str(value) if value is not None else ""
 
-    # Build headers dynamically from all keys across all results
-    all_keys = []
-    seen = set()
+    preferred_order = [
+        "name", "current_title", "current_company", "filename",
+        "experience_years", "experience_band", "industries_and_domains",
+        "fit_category", "overall_match", "skills_match",
+        "experience_match", "education_match", "recommendation",
+        "mandatory_requirements",
+        "highlights", "strengths", "gaps", "red_flags",
+        "interview_focus_areas", "candidate_skills",
+        "fit_reasoning", "experience_band_reasoning", "score_reasoning",
+    ]
+
+    all_result_keys = set()
     for r in results:
-        for k in r.keys():
-            if k not in seen:
-                all_keys.append(k)
-                seen.add(k)
+        all_result_keys.update(r.keys())
+
+    ordered_keys = [k for k in preferred_order if k in all_result_keys]
+    remaining = [k for k in all_result_keys if k not in preferred_order]
+    final_keys = ordered_keys + sorted(remaining)
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(all_keys)
+    writer.writerow(final_keys)
 
     for r in results:
-        writer.writerow([flatten(r.get(k, "")) for k in all_keys])
+        writer.writerow([flatten(r.get(k, "")) for k in final_keys])
 
     output.seek(0)
 
