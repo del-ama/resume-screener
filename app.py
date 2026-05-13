@@ -8,6 +8,11 @@ from flask import Flask, request, jsonify, render_template, Response
 from groq import Groq
 from utils import extract_text, get_candidate_name, extract_candidate_name
 
+
+# for testing railway errors-
+import sys
+print(f"GROQ_API_KEY present: {bool(os.getenv('GROQ_API_KEY'))}", file=sys.stderr)
+
 load_dotenv()
 
 app = Flask(__name__)
