@@ -65,7 +65,6 @@
     .fit-exact        { background: #C6F6D5; color: #276749; }
     .fit-semantic     { background: #BEE3F8; color: #2A69AC; }
     .fit-transferable { background: #FEFCBF; color: #744210; }
-    .fit-spam         { background: #FED7D7; color: #9B2C2C; }
     .fit-irrelevant   { background: #E2E8F0; color: #4A5568; }
 
     .band-pill {
@@ -76,8 +75,36 @@
       font-weight: bold;
       background: #EDF2F7;
       color: #4A5568;
-      margin-left: 8px;
+      margin-left: 6px;
       vertical-align: middle;
+    }
+
+    .years-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      background: #E9D8FD;
+      color: #553C9A;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .industry-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 5px;
+    }
+
+    .industry-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      background: #EDF2F7;
+      color: #4A5568;
+      border-radius: 10px;
+      border: 1px solid #CBD5E0;
     }
 
     .candidate-card {
@@ -94,13 +121,15 @@
     .candidate-card.fit-exact-border        { border-left-color: #38A169; }
     .candidate-card.fit-semantic-border     { border-left-color: #3182CE; }
     .candidate-card.fit-transferable-border { border-left-color: #D69E2E; }
-    .candidate-card.fit-spam-border         { border-left-color: #E53E3E; }
     .candidate-card.fit-irrelevant-border   { border-left-color: #A0AEC0; }
+
+    /* Rate limit error card */
+    .candidate-card.rate-limit-border { border-left-color: #E53E3E; }
 
     .card-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       padding: 20px 24px;
       cursor: pointer;
     }
@@ -116,6 +145,7 @@
       align-items: center;
       gap: 16px;
       flex-shrink: 0;
+      margin-left: 16px;
     }
 
     .score-circle {
@@ -134,6 +164,7 @@
     .score-high { background: #38A169; }
     .score-mid  { background: #D69E2E; }
     .score-low  { background: #E53E3E; }
+    .score-err  { background: #A0AEC0; }
 
     .expand-icon {
       color: #A0AEC0;
@@ -176,7 +207,7 @@
       margin-bottom: 10px;
     }
 
-    .bar-label { font-size: 13px; color: #4A5568; width: 140px; flex-shrink: 0; }
+    .bar-label  { font-size: 13px; color: #4A5568; width: 140px; flex-shrink: 0; }
 
     .bar-track {
       flex: 1;
@@ -204,12 +235,10 @@
     }
 
     .detail-list li:last-child { border-bottom: none; }
-    .detail-list.strengths       li::before { content: "✓ "; color: #38A169; font-weight: bold; }
-    .detail-list.gaps            li::before { content: "✗ "; color: #E53E3E; font-weight: bold; }
-    .detail-list.interview       li::before { content: "? "; color: #3182CE; font-weight: bold; }
-    .detail-list.evidence-for    li::before { content: "✓ "; color: #38A169; font-weight: bold; }
-    .detail-list.red-flags       li::before { content: "⚠ "; color: #E53E3E; font-weight: bold; }
-    .detail-list.domains         li::before { content: "◎ "; color: #718096; font-weight: bold; }
+    .detail-list.strengths     li::before { content: "✓ "; color: #38A169; font-weight: bold; }
+    .detail-list.gaps          li::before { content: "✗ "; color: #E53E3E; font-weight: bold; }
+    .detail-list.interview     li::before { content: "? "; color: #3182CE; font-weight: bold; }
+    .detail-list.highlights    li::before { content: "★ "; color: #D69E2E; font-weight: bold; }
 
     .score-reasoning-box {
       background: #EBF4FF;
@@ -218,6 +247,45 @@
       font-size: 13px;
       line-height: 1.7;
       margin-top: 16px;
+    }
+
+    /* Experience reasoning — subtle note inside card */
+    .exp-reasoning-note {
+      font-size: 11px;
+      color: #A0AEC0;
+      font-style: italic;
+      margin-top: 6px;
+      padding: 6px 10px;
+      background: #F7FAFC;
+      border-radius: 4px;
+      border-left: 2px solid #E2E8F0;
+    }
+
+    /* Rate limit error box */
+    .rate-limit-box {
+      background: #FFF5F5;
+      border: 1px solid #FED7D7;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .rate-limit-box .rl-icon { font-size: 28px; margin-bottom: 8px; }
+    .rate-limit-box .rl-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #C53030;
+      margin-bottom: 8px;
+    }
+    .rate-limit-box .rl-message {
+      font-size: 13px;
+      color: #742A2A;
+      line-height: 1.6;
+    }
+    .rate-limit-box .rl-link {
+      color: #3182CE;
+      text-decoration: underline;
     }
 
     /* Mandatory requirements table */
@@ -238,6 +306,14 @@
       padding: 8px 14px;
     }
 
+    .mandatory-empty {
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #718096;
+      font-style: italic;
+      background: #F7FAFC;
+    }
+
     .mandatory-row {
       display: flex;
       align-items: flex-start;
@@ -248,27 +324,31 @@
     }
 
     .mandatory-row:last-child { border-bottom: none; }
+    .mandatory-row.met        { background: #F0FFF4; }
+    .mandatory-row.unmet      { background: #FFF5F5; }
 
-    .mandatory-row.met   { background: #F0FFF4; }
-    .mandatory-row.unmet { background: #FFF5F5; }
-
-    .mandatory-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
-    .mandatory-req  { font-weight: bold; color: #2D3748; }
+    .mandatory-icon   { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .mandatory-req    { font-weight: bold; color: #2D3748; }
     .mandatory-reason { color: #718096; font-size: 12px; margin-top: 2px; }
 
-    /* Skills table */
-    .skills-section {
+    /* Highlights box */
+    .highlights-box {
+      background: #FFFFF0;
+      border-left: 3px solid #D69E2E;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
       margin-top: 16px;
     }
 
-    .skills-section h3 {
+    .highlights-box h3 {
       font-size: 13px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #718096;
-      margin-bottom: 10px;
+      color: #B7791F;
+      margin-bottom: 8px;
     }
 
+    /* Skills */
     .skill-row {
       display: flex;
       align-items: center;
@@ -279,7 +359,6 @@
     }
 
     .skill-row:last-child { border-bottom: none; }
-
     .skill-name { color: #2D3748; }
 
     .skill-context {
@@ -293,31 +372,33 @@
     .ctx-oversight { background: #BEE3F8; color: #2A69AC; }
     .ctx-exposure  { background: #FEFCBF; color: #744210; }
 
-    .spam-warning {
-      background: #FFF5F5;
-      border: 1px solid #FC8181;
+    /* Red flags */
+    .red-flag-clean {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #F0FFF4;
+      border: 1px solid #C6F6D5;
       border-radius: 6px;
       padding: 10px 14px;
-      margin-top: 14px;
       font-size: 13px;
-      color: #9B2C2C;
+      color: #276749;
     }
 
-    .red-flags-box {
+    .red-flag-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
       background: #FFF5F5;
-      border-left: 3px solid #E53E3E;
-      padding: 12px 16px;
-      border-radius: 0 6px 6px 0;
-      margin-top: 16px;
+      border: 1px solid #FED7D7;
+      border-radius: 6px;
+      padding: 9px 14px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #742A2A;
     }
 
-    .red-flags-box h3 {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #C53030;
-      margin-bottom: 8px;
-    }
+    .red-flag-item:last-child { margin-bottom: 0; }
 
     .interview-box {
       background: #EBF8FF;
@@ -335,15 +416,29 @@
       margin-bottom: 10px;
     }
 
+    .not-applicable-note {
+      font-size: 13px;
+      color: #A0AEC0;
+      font-style: italic;
+      padding: 10px 0;
+    }
+
     .recommendation-box {
       background: #F0FFF4;
       border-left: 3px solid #38A169;
       padding: 12px 16px;
       font-size: 14px;
-      line-height: 1.6;
+      line-height: 1.8;
       color: #2D3748;
       border-radius: 0 6px 6px 0;
       margin-top: 16px;
+      white-space: pre-line;
+    }
+
+    .empty-note {
+      font-size: 13px;
+      color: #A0AEC0;
+      font-style: italic;
     }
 
     .no-results {
@@ -366,7 +461,7 @@
 <body>
 <div class="container">
 
-  <!-- HEADER -->
+  <!-- PAGE HEADER -->
   <div class="header">
     <div>
       <h1>Screening Results</h1>
@@ -401,9 +496,6 @@
     {% if counts.get('transferable_fit', 0) > 0 %}
     <span class="summary-pill fit-transferable">⇄ Transferable: {{ counts['transferable_fit'] }}</span>
     {% endif %}
-    {% if counts.get('keyword_spam', 0) > 0 %}
-    <span class="summary-pill fit-spam">⚠ Keyword Spam: {{ counts['keyword_spam'] }}</span>
-    {% endif %}
     {% if counts.get('irrelevant', 0) > 0 %}
     <span class="summary-pill fit-irrelevant">✗ Irrelevant: {{ counts['irrelevant'] }}</span>
     {% endif %}
@@ -414,72 +506,118 @@
     {% for r in results %}
 
     {% set cat = r.fit_category | default('irrelevant') %}
-    {% set border_class = {
+
+    {# Detect rate limit error from fit_reasoning or red_flags #}
+    {% set is_rate_limit = 'limit reached' in (r.fit_reasoning | default('')) | lower
+                        or 'limit reached' in (r.red_flags | default([]) | join(' ')) | lower %}
+
+    {% set border_class = 'rate-limit-border' if is_rate_limit else {
       'exact_fit':        'fit-exact-border',
       'semantic_fit':     'fit-semantic-border',
       'transferable_fit': 'fit-transferable-border',
-      'keyword_spam':     'fit-spam-border',
       'irrelevant':       'fit-irrelevant-border'
     }[cat] | default('fit-irrelevant-border') %}
 
     {% set score = r.overall_match | default(0) %}
-    {% set score_class = 'score-high' if score >= 70 else ('score-mid' if score >= 40 else 'score-low') %}
+    {% set score_class = 'score-err' if is_rate_limit else
+      ('score-high' if score >= 70 else ('score-mid' if score >= 40 else 'score-low')) %}
 
     <div class="candidate-card {{ border_class }}">
 
       <!-- CARD HEADER -->
       <div class="card-header" onclick="toggleCard({{ loop.index }})">
-        <div>
+        <div style="flex:1;">
+
           <div class="candidate-name">
             {{ r.name }}
-            {% if r.experience_band is defined and r.experience_band and r.experience_band != 'Unknown' %}
-            <span class="band-pill">{{ r.experience_band }}</span>
+            {% if not is_rate_limit %}
+              {% if r.experience_years is defined and r.experience_years and r.experience_years != 'Unknown' %}
+              <span class="years-pill">{{ r.experience_years }}</span>
+              {% endif %}
+              {% if r.experience_band is defined and r.experience_band and r.experience_band != 'Unknown' %}
+              <span class="band-pill">{{ r.experience_band }}</span>
+              {% endif %}
             {% endif %}
           </div>
 
-          {% set title = r.current_title | default('') %}
-          {% set company = r.current_company | default('') %}
-          {% if title and title != 'NULL' and company and company != 'NULL' %}
-          <div class="candidate-current">{{ title }} at {{ company }}</div>
-          {% elif title and title != 'NULL' %}
-          <div class="candidate-current">{{ title }}</div>
+          {% if not is_rate_limit %}
+            {% set title = r.current_title | default('') %}
+            {% set company = r.current_company | default('') %}
+            {% if title and title != 'NULL' and company and company != 'NULL' %}
+            <div class="candidate-current">{{ title }} at {{ company }}</div>
+            {% elif title and title != 'NULL' %}
+            <div class="candidate-current">{{ title }}</div>
+            {% endif %}
+
+            {% if r.industries_and_domains is defined and r.industries_and_domains | length > 0 %}
+            <div class="industry-tags">
+              {% for d in r.industries_and_domains %}
+              <span class="industry-tag">{{ d }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
           {% endif %}
 
-          <div class="candidate-file">{{ r.filename }}</div>
+          <div class="candidate-file" style="margin-top:6px;">{{ r.filename }}</div>
 
+          {% if not is_rate_limit %}
           <div style="margin-top:8px;">
             {% set pill_class = {
               'exact_fit':        'fit-exact',
               'semantic_fit':     'fit-semantic',
               'transferable_fit': 'fit-transferable',
-              'keyword_spam':     'fit-spam',
               'irrelevant':       'fit-irrelevant'
             }[cat] | default('fit-irrelevant') %}
             {% set pill_label = {
               'exact_fit':        '✓ Exact Fit',
               'semantic_fit':     '◎ Semantic Fit',
               'transferable_fit': '⇄ Transferable Fit',
-              'keyword_spam':     '⚠ Keyword Spam',
               'irrelevant':       '✗ Irrelevant'
             }[cat] | default('Unknown') %}
             <span class="summary-pill {{ pill_class }}">{{ pill_label }}</span>
-
             {% if r.fit_reasoning is defined and r.fit_reasoning %}
             <span style="font-size:12px; color:#718096; margin-left:8px; font-style:italic;">
               {{ r.fit_reasoning }}
             </span>
             {% endif %}
           </div>
+          {% else %}
+          <div style="margin-top:6px;">
+            <span style="font-size:12px; color:#E53E3E; font-weight:bold;">⚠ Screening limit reached</span>
+          </div>
+          {% endif %}
+
         </div>
 
         <div class="card-right">
-          <div class="score-circle {{ score_class }}">{{ score }}%</div>
+          <div class="score-circle {{ score_class }}">
+            {{ '—' if is_rate_limit else (score | string + '%') }}
+          </div>
           <div class="expand-icon" id="icon-{{ loop.index }}">▼</div>
         </div>
       </div>
 
       <!-- CARD DETAIL -->
       <div class="card-detail" id="detail-{{ loop.index }}">
+
+        {% if is_rate_limit %}
+        <!-- Rate limit error state -->
+        <div class="rate-limit-box">
+          <div class="rl-icon">⏳</div>
+          <div class="rl-title">Daily Screening Limit Reached</div>
+          <div class="rl-message">
+            This candidate could not be screened because the daily AI limit was reached.<br><br>
+            <strong>Options:</strong><br>
+            • Re-run this candidate after midnight IST when the free limit resets<br>
+            • Upgrade to the Developer plan at
+            <a class="rl-link" href="https://console.groq.com" target="_blank">console.groq.com</a>
+            to continue immediately<br>
+            • Set a spend limit (e.g. $5/month) to avoid unexpected charges
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Normal screening result -->
 
         <!-- 1. Score Bars -->
         <div class="score-bars">
@@ -510,15 +648,24 @@
         </div>
         {% endif %}
 
-        <!-- 3. Mandatory Requirements — always shown -->
-        {% if r.mandatory_requirements is defined %}
-        <div class="mandatory-section" style="margin-top:16px;">
+        <!-- Experience band reasoning — subtle note -->
+        {% if r.experience_band_reasoning is defined
+              and r.experience_band_reasoning
+              and r.experience_band_reasoning != 'Unknown'
+              and 'Could not' not in r.experience_band_reasoning
+              and 'Error' not in r.experience_band_reasoning
+              and 'limit' not in r.experience_band_reasoning | lower %}
+        <div class="exp-reasoning-note">
+          Experience estimate: {{ r.experience_band_reasoning }}
+        </div>
+        {% endif %}
+
+        <!-- 3. Mandatory Requirements -->
+        <div class="mandatory-section">
           <div class="mandatory-section-header">Mandatory Requirements</div>
-          {% if r.mandatory_requirements | length == 0 %}
-          <div class="mandatory-row" style="background:#F7FAFC;">
-            <span style="font-size:13px; color:#718096; font-style:italic;">
-              No mandatory requirements explicitly stated in the JD.
-            </span>
+          {% if r.mandatory_requirements is not defined or r.mandatory_requirements | length == 0 %}
+          <div class="mandatory-empty">
+            No mandatory requirements explicitly stated in the JD.
           </div>
           {% else %}
           {% for req in r.mandatory_requirements %}
@@ -532,109 +679,113 @@
           {% endfor %}
           {% endif %}
         </div>
-        {% endif %}
 
-        <!-- 4. Keyword Spam Warning -->
-        {% if cat == 'keyword_spam' %}
-        <div class="spam-warning" style="margin-top:14px;">
-          <strong>⚠ Possible Keyword Spam Detected</strong>
-          Resume language closely mirrors the JD but may lack genuine depth.
-          Recommend a screening call to verify before shortlisting.
-        </div>
-        {% endif %}
-
-        <!-- 5. Strengths and Gaps side by side -->
-        <div class="detail-grid">
-          <div class="detail-section">
-            <h3>Strengths</h3>
-            <ul class="detail-list strengths">
-              {% for s in r.strengths | default([]) %}
-              <li>{{ s }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-
-          <div class="detail-section">
-            <h3>Gaps</h3>
-            <ul class="detail-list gaps">
-              {% for g in r.gaps | default([]) %}
-              <li>{{ g }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-
-        <!-- 6. Supporting Evidence and Red Flags side by side -->
-        <div class="detail-grid" style="margin-top:20px;">
-          {% if r.evidence is defined and r.evidence.supporting | default([]) | length > 0 %}
-          <div class="detail-section">
-            <h3>Supporting Evidence</h3>
-            <ul class="detail-list evidence-for">
-              {% for e in r.evidence.supporting %}
-              <li>{{ e }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
-
-          {% if r.red_flags | default([]) | length > 0 %}
-          <div class="detail-section">
-            <h3>Red Flags</h3>
-            <ul class="detail-list red-flags">
-              {% for f in r.red_flags %}
-              <li>{{ f }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
-        </div>
-
-        <!-- 7. Skills Relevant to JD -->
-        {% if r.skills is defined and r.skills | length > 0 %}
-        <div class="skills-section">
-          <h3>Skills Relevant to This Role</h3>
-          {% for skill in r.skills %}
-          <div class="skill-row">
-            <span class="skill-name">{{ skill.skill }}</span>
-            <span class="skill-context ctx-{{ skill.context }}">
-              {{ skill.context | replace('_', ' ') | title }}
-            </span>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- 8. Industries and Domains -->
-        {% if r.industries_and_domains is defined and r.industries_and_domains | length > 0 %}
-        <div class="detail-section" style="margin-top:16px;">
-          <h3>Industries &amp; Domains</h3>
-          <ul class="detail-list domains">
-            {% for d in r.industries_and_domains %}
-            <li>{{ d }}</li>
+        <!-- 4. Highlights -->
+        {% if r.highlights is defined and r.highlights | length > 0 %}
+        <div class="highlights-box">
+          <h3>Highlights</h3>
+          <ul class="detail-list highlights">
+            {% for h in r.highlights %}
+            <li>{{ h }}</li>
             {% endfor %}
           </ul>
         </div>
         {% endif %}
 
-        <!-- 9. Interview Focus Areas -->
-        {% if r.interview_focus_areas | default([]) | length > 0 %}
-        <div class="interview-box">
+        <!-- 5. Strengths and Gaps -->
+        <div class="detail-grid">
+          <div class="detail-section">
+            <h3>Strengths</h3>
+            {% if r.strengths | default([]) | length > 0 %}
+            <ul class="detail-list strengths">
+              {% for s in r.strengths %}
+              <li>{{ s }}</li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-note">No specific strengths identified.</p>
+            {% endif %}
+          </div>
+
+          <div class="detail-section">
+            <h3>Gaps</h3>
+            {% if r.gaps | default([]) | length > 0 %}
+            <ul class="detail-list gaps">
+              {% for g in r.gaps %}
+              <li>{{ g }}</li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="empty-note">No significant gaps identified.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 6. Candidate Skills and Red Flags -->
+        <div class="detail-grid" style="margin-top:20px;">
+          <div class="detail-section">
+            <h3>Candidate Skills Relevant to This Role</h3>
+            {% if r.candidate_skills is defined and r.candidate_skills | length > 0 %}
+            {% for skill in r.candidate_skills %}
+            <div class="skill-row">
+              <span class="skill-name">{{ skill.skill }}</span>
+              <span class="skill-context ctx-{{ skill.context }}">
+                {{ skill.context | replace('_', ' ') | title }}
+              </span>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="empty-note">No JD-relevant skills found.</p>
+            {% endif %}
+          </div>
+
+          <div class="detail-section">
+            <h3>Red Flags</h3>
+            {% set flags = r.red_flags | default([]) %}
+            {% if flags | length == 0 or (flags | length == 1 and 'No red flags' in flags[0]) %}
+            <div class="red-flag-clean">
+              <span>✓</span>
+              <span>No red flags identified</span>
+            </div>
+            {% else %}
+            {% for f in flags %}
+            <div class="red-flag-item">
+              <span>⚠</span>
+              <span>{{ f }}</span>
+            </div>
+            {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 7. Interview Focus Areas -->
+        <div class="interview-box" style="margin-top:16px;">
           <h3>Interview Focus Areas</h3>
+          {% if cat == 'irrelevant' %}
+          <p class="not-applicable-note">
+            Not applicable — candidate not recommended for interview.
+          </p>
+          {% elif r.interview_focus_areas | default([]) | length > 0 %}
           <ul class="detail-list interview">
             {% for q in r.interview_focus_areas %}
             <li>{{ q }}</li>
             {% endfor %}
           </ul>
+          {% else %}
+          <p class="not-applicable-note">No specific focus areas identified.</p>
+          {% endif %}
+        </div>
+
+        <!-- 8. Recruiter Recommendation -->
+        {% if r.recommendation is defined and r.recommendation %}
+        <div class="recommendation-box">
+          <strong>Recruiter Recommendation:</strong>
+{{ r.recommendation }}
         </div>
         {% endif %}
 
-        <!-- 10. Recruiter Recommendation -->
-        {% if r.recommendation is defined and r.recommendation %}
-        <div class="recommendation-box">
-          <strong>Recruiter Recommendation:</strong><br>
-          {{ r.recommendation }}
-        </div>
         {% endif %}
+        {# end normal vs rate-limit #}
 
       </div>
     </div>
@@ -650,10 +801,9 @@
 <div class="disclaimer">
   AI-generated screening results are indicative only and may contain errors.<br>
   All hiring decisions must be reviewed and confirmed by a qualified human recruiter.<br>
-  Scores and assessments are directional guides, not definitive evaluations.
+  Experience estimates are AI-calculated and should be verified against the original resume.
 </div>
 
-<!-- Results data for JavaScript -->
 <script>
   window.screeningResults = {{ results | tojson }};
   window.jobTitle = {{ job_title | tojson }};
@@ -689,13 +839,9 @@
 
   function copyToClipboard() {
     const btn = document.getElementById("copyBtn")
-
-    // Expand all cards so all content is included
     document.querySelectorAll(".card-detail").forEach(d => d.classList.add("open"))
     document.querySelectorAll(".expand-icon").forEach(i => i.classList.add("open"))
-
     const text = document.querySelector(".container").innerText
-
     navigator.clipboard.writeText(text).then(() => {
       btn.textContent      = "✓ Copied!"
       btn.style.background = "#C6F6D5"
@@ -705,9 +851,7 @@
         btn.style.background = ""
         btn.style.color      = ""
       }, 2000)
-    }).catch(() => {
-      alert("Copy failed. Try selecting manually with Ctrl+A, Ctrl+C.")
-    })
+    }).catch(() => alert("Copy failed. Try Ctrl+A, Ctrl+C manually."))
   }
 </script>
 
