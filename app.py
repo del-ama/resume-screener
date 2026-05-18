@@ -483,3 +483,9 @@ def download_csv():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+@app.route("/debug-users")
+def debug_users():
+    users = load_users()
+    # Shows usernames only — never expose passwords
+    return jsonify({"users_found": list(users.keys())})
