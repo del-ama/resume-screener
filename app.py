@@ -484,12 +484,14 @@ def download_csv():
 if __name__ == "__main__":
     app.run(debug=True)
 
+
 @app.route("/debug-users")
 def debug_users():
-    raw = os.getenv("APP_USERS", "NOT FOUND")
-    # Only show length and first 3 chars — don't expose actual value
+    import os
+    raw1 = os.getenv("APP_USERS", "NOT FOUND")
+    raw2 = os.environ.get("APP_USERS", "NOT FOUND 2")
     return jsonify({
-        "found": raw != "NOT FOUND",
-        "length": len(raw),
-        "starts_with": raw[:3] if raw != "NOT FOUND" else ""
+        "getenv": raw1[:5] if raw1 not in ["NOT FOUND"] else raw1,
+        "environ": raw2[:5] if raw2 not in ["NOT FOUND 2"] else raw2,
+        "all_keys": [k for k in os.environ.keys() if "USER" in k.upper()]
     })
