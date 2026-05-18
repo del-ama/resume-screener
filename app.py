@@ -44,7 +44,7 @@ def load_users():
     if not raw:
         return users
 
-    for entry in raw.split(","):
+    for entry in raw.split("|"):        # Changed from "," to "|"
         entry = entry.strip()
         if ":" in entry:
             username, password = entry.split(":", 1)  # Split on first colon only
