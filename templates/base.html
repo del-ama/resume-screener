@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Resume Screener{% endblock %}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #F7FAFC;
+      color: #2D3748;
+      min-height: 100vh;
+    }
+
+    /* ---- TOP NAV BAR ---- */
+    .navbar {
+      background: #2C5282;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    .navbar-brand {
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .navbar-user {
+      color: #BEE3F8;
+      font-size: 13px;
+    }
+
+    .logout-btn {
+      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid #BEE3F8;
+      border-radius: 6px;
+      color: #BEE3F8;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: white;
+      color: #2C5282;
+      border-color: white;
+    }
+
+    /* ---- PAGE CONTENT AREA ---- */
+    .page-body {
+      padding: 40px 20px;
+    }
+
+    {% block extra_styles %}{% endblock %}
+  </style>
+</head>
+<body>
+
+  <!-- NAV BAR — appears on every page -->
+  <nav class="navbar">
+    <a class="navbar-brand" href="/">📋 Resume Screener</a>
+    <div class="navbar-right">
+      <span class="navbar-user">👤 {{ session.username }}</span>
+      <a class="logout-btn" href="/logout">Sign Out</a>
+    </div>
+  </nav>
+
+  <!-- PAGE CONTENT — each page fills this in -->
+  <div class="page-body">
+    {% block content %}{% endblock %}
+  </div>
+
+</body>
+</html>
