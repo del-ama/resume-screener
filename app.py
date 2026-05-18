@@ -4,33 +4,110 @@ import csv
 import io
 import time
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, render_template, Response
+from flask import Flask, request, jsonify, render_template, Response, redirect, url_for, session
 from groq import Groq
 from utils import extract_text, get_candidate_name, extract_candidate_name
 
-
-# for testing railway errors-
+# For testing railway errors
 import sys
 print(f"GROQ_API_KEY present: {bool(os.getenv('GROQ_API_KEY'))}", file=sys.stderr)
 
 load_dotenv()
 
 app = Flask(__name__)
+
+# Secret key is required for Flask sessions to work.
+# A session is like a secure cookie — Flask uses this key to sign it
+# so it can't be tampered with. Set APP_SECRET_KEY in Railway Variables.
+# If not set, we fall back to a random key (sessions won't persist across restarts).
+app.secret_key = os.getenv("APP_SECRET_KEY", os.urandom(24))
+
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # Max file size — 10MB
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 
-# ---- ROUTES ----
+# ---- USER LOADING ----
+
+def load_users():
+    """
+    Reads APP_USERS from environment and returns a dict of {username: password}.
+
+    In Railway Variables, set APP_USERS like this:
+        amar:mypassword,client1:theirpass,client2:anotherpass
+
+    Each user is separated by a comma. Username and password are separated by a colon.
+    """
+    users = {}
+    raw = os.getenv("APP_USERS", "")
+    if not raw:
+        return users
+
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if ":" in entry:
+            username, password = entry.split(":", 1)  # Split on first colon only
+            users[username.strip()] = password.strip()
+
+    return users
+
+
+# ---- LOGIN CHECK HELPER ----
+
+def is_logged_in():
+    """Returns True if the current user has a valid session."""
+    return session.get("logged_in") is True
+
+
+# ---- LOGIN / LOGOUT ROUTES ----
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """
+    GET  — show the login page
+    POST — check the submitted username and password
+    """
+    if is_logged_in():
+        return redirect(url_for("home"))  # Already logged in, go to main page
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        users = load_users()
+
+        # Check if username exists and password matches
+        if username in users and users[username] == password:
+            session["logged_in"] = True
+            session["username"] = username  # Store username so we can show it in the nav bar
+            return redirect(url_for("home"))
+        else:
+            return render_template("login.html", error="Invalid username or password.")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    """Clear the session and send the user back to the login page."""
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ---- MAIN ROUTES (protected) ----
 
 @app.route("/")
 def home():
+    if not is_logged_in():
+        return redirect(url_for("login"))
     return render_template("index.html")
 
 
 @app.route("/screen", methods=["POST"])
 def screen():
+    if not is_logged_in():
+        return redirect(url_for("login"))
 
     # ---- STEP 1: GET THE JD TEXT ----
     jd_text = ""
@@ -292,8 +369,6 @@ def screen_candidate(name, resume_text, jd_text):
             if attempt == 0:
                 time.sleep(2)
                 continue
-            # Give a clear, helpful message when rate limit is hit
-            # Covers both free tier daily limit and paid spend cap
             if "429" in error_str or "rate_limit" in error_str.lower():
                 return _fallback(
                     "Daily screening limit reached. "
@@ -337,10 +412,13 @@ def _fallback(reason):
     }
 
 
-# ---- DOWNLOAD ROUTES ----
+# ---- DOWNLOAD ROUTES (protected) ----
 
 @app.route("/download-csv", methods=["POST"])
 def download_csv():
+    if not is_logged_in():
+        return jsonify({"error": "Not logged in"}), 401
+
     """CSV with logical column ordering. New AI fields appended at end automatically."""
     data = request.get_json()
     results = data.get("results", [])
