@@ -486,6 +486,10 @@ if __name__ == "__main__":
 
 @app.route("/debug-users")
 def debug_users():
-    users = load_users()
-    # Shows usernames only — never expose passwords
-    return jsonify({"users_found": list(users.keys())})
+    raw = os.getenv("APP_USERS", "NOT FOUND")
+    # Only show length and first 3 chars — don't expose actual value
+    return jsonify({
+        "found": raw != "NOT FOUND",
+        "length": len(raw),
+        "starts_with": raw[:3] if raw != "NOT FOUND" else ""
+    })
